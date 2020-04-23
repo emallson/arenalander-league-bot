@@ -1,0 +1,82 @@
+Deck
+1 Resplendent Angel (M19) 34
+11 Plains (ANA) 56
+1 Ardenvale Tactician (ELD) 5
+1 Kinjalli's Sunwing (XLN) 19
+1 Archon of Sun's Grace (THB) 3
+1 Shalai, Voice of Plenty (DAR) 35
+1 Fight as One (IKO) 12
+1 Lyra Dawnbringer (DAR) 26
+1 Sephara, Sky's Blade (M20) 36
+1 Spectral Sailor (M20) 76
+12 Island (ANA) 57
+1 Siren Stormtamer (XLN) 79
+1 Pteramander (RNA) 47
+1 Dive Down (XLN) 53
+1 Hypnotic Sprite (ELD) 49
+1 Favorable Winds (XLN) 56
+1 Faerie Vandal (ELD) 45
+1 Brazen Borrower (ELD) 39
+1 Mu Yanling, Sky Dancer (M20) 68
+1 Warden of Evos Isle (M20) 79
+1 Winged Words (M20) 80
+1 Gust of Wind (IKO) 54
+1 God-Eternal Kefnet (WAR) 53
+1 Dungeon Geists (M20) 57
+1 Fabled Passage (ELD) 244
+1 Evolving Wilds (RIX) 186
+1 Shark Typhoon (IKO) 67
+1 Skycat Sovereign (IKO) 207
+1 Depose // Deploy (RNA) 225
+1 Giant Killer (ELD) 14
+1 Warrant // Warden (RNA) 230
+1 Jubilant Skybonder (IKO) 223
+1 Empyrean Eagle (M20) 208
+1 Elite Guardmage (WAR) 195
+1 Dream Trawler (THB) 214
+1 Essence Scatter (IKO) 49
+1 Essence Capture (RNA) 37
+1 Disdainful Stroke (GRN) 37
+1 Negate (M20) 69
+1 Keep Safe (IKO) 56
+1 Spell Pierce (XLN) 81
+1 Nadir Kraken (THB) 55
+1 Wizard's Retort (DAR) 75
+1 Syncopate (DAR) 67
+1 Absorb (RNA) 151
+1 Dovin's Veto (WAR) 193
+1 Curious Obsession (RIX) 35
+1 Opt (ELD) 59
+1 Chart a Course (XLN) 48
+1 Blink of an Eye (DAR) 46
+1 Omen of the Sea (THB) 58
+1 Sea-Dasher Octopus (IKO) 66
+1 Thirst for Meaning (THB) 74
+1 Staggering Insight (THB) 228
+1 Teferi, Time Raveler (WAR) 221
+1 Idyllic Tutor (THB) 24
+1 Castle Vantress (ELD) 242
+1 Memorial to Genius (DAR) 243
+1 Castle Ardenvale (ELD) 238
+1 Glacial Fortress (XLN) 255
+1 Hallowed Fountain (RNA) 251
+1 Temple of Enlightenment (THB) 246
+1 Tranquil Cove (M20) 259
+1 Azorius Guildgate (RNA) 243
+1 Mystic Sanctuary (ELD) 247
+1 Meandering River (DAR) 274
+1 Prison Realm (WAR) 26
+1 Banishing Light (THB) 4
+1 Seal Away (DAR) 31
+1 Conclave Tribunal (GRN) 6
+1 Elspeth, Sun's Nemesis (THB) 14
+1 Elspeth Conquers Death (THB) 13
+1 Deputy of Detention (RNA) 165
+1 Alseid of Life's Bounty (THB) 1
+1 Warkite Marauder (RIX) 60
+1 Starlit Mantle (THB) 67
+1 Lazotep Plating (WAR) 59
+1 Shadowspear (THB) 236
+1 Gods Willing (M20) 19
+
+Sideboard

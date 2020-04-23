@@ -1,0 +1,21 @@
+version: '2.0'
+services:
+  botrs:
+    build: ./bot-rs/docker
+    env_file: ./bot-rs/.env
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    volumes:
+      - ./bot-rs/:/opt/bot
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: arstarst
+      POSTGRES_DB: db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data

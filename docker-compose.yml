@@ -9,6 +9,7 @@ services:
       - db
     volumes:
       - ./bot-rs/:/opt/bot
+      - ./bot-rs/docker-target/:/opt/bot/target
   db:
     image: postgres:latest
     environment:

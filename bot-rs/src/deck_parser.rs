@@ -6,7 +6,9 @@ use nom::multi::many0;
 use nom::IResult;
 use anyhow::Result;
 use thiserror::Error;
-use scryfall::card::Card;
+use diesel::prelude::*;
+use diesel::pg::PgConnection;
+use std::collections::HashMap;
 
 #[derive(Error, Debug)]
 pub enum DeckError {
@@ -35,8 +37,8 @@ pub enum DeckError {
 pub struct RawDeckEntry {
     pub name: String,
     pub count: u32,
-    pub set: String,
-    pub code: u32,
+    pub set: Option<String>,
+    pub code: Option<u32>,
 }
 
 const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
@@ -44,13 +46,13 @@ const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
 fn card(input: &str) -> IResult<&str, RawDeckEntry> {
     let count = map_res(digit1, |s: &str| s.parse::<u32>());
     let title = map(many0(none_of("()")), |s| s.into_iter().collect::<String>().trim().to_string());
-    let setcode = delimited(char('('), alphanumeric1, char(')'));
+    let setcode = map(delimited(char('('), alphanumeric1, char(')')), |code| if code == "DAR" { "DOM" } else { code });
     let collector_number = map_res(digit1, |s: &str| s.parse::<u32>());
-    map(tuple((count, space1, title, space0, setcode, space1, collector_number)), |t: (u32, _, _, _, _, _, u32)| {
+    map(tuple((count, space1, title, space0, opt(setcode), space0, opt(collector_number))), |t: (u32, _, _, _, _, _, _)| {
         RawDeckEntry {
             count: t.0,
             name: t.2,
-            set: t.4.to_string(),
+            set: t.4.map(|s| s.to_string()),
             code: t.6
         }
     })(input)
@@ -76,7 +78,7 @@ struct RawDeck {
 
 #[derive(Debug)]
 pub struct NormalizedCardEntry {
-    name: String,
+    id: u32,
     count: u32,
 }
 
@@ -106,10 +108,26 @@ fn validate_count(name: &str, count: u32) -> Result<()> {
     }
 }
 
-fn validate_decklist(list: RawDeck) -> Result<Deck> {
+// TODO: bulk lookup
+fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<u32> {
+    use super::cards::cards::dsl::*;
+
+    if card.code.is_some() && card.set.is_some() {
+        // prefer lookup by setcode + number
+        cards.select(id).filter(setcode.eq(card.set.as_ref().unwrap()).and(number.eq(card.code.unwrap().to_string())))
+            .first(conn).optional()
+            .expect("Unable to connect to DB for card lookup.").map(|u: i64| u as u32)
+    } else {
+        cards.select(id).filter(name.eq(&card.name))
+            .first(conn).optional()
+            .expect("Unable to connect to DB for card lookup.").map(|u: i64| u as u32)
+    }
+}
+
+fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
     // Step 1: Check for sideboard errors.
     if let Some(sb) = list.sideboard {
-        if sb.len() > 0 {
+        if !sb.is_empty() {
             return Err(DeckError::NonEmptySideboard(sb.len() as u32).into());
         }
     }
@@ -121,32 +139,37 @@ fn validate_decklist(list: RawDeck) -> Result<Deck> {
     }
 
     // Step 3: Check for invalid card names.
-    let cards = list.main.iter().map(|entry| (entry, Card::named(entry.name.as_str()))).collect::<Vec<_>>();
-    let invalid = cards.iter().filter(|(_, c)| c.is_err()).collect::<Vec<_>>();
+    let cards = list.main.iter().map(|entry| (entry, lookup_card(conn, entry))).collect::<Vec<_>>();
+    let invalid = cards.iter().filter(|(_, c)| c.is_none()).collect::<Vec<_>>();
 
     if !invalid.is_empty() {
         return Err(DeckError::InvalidCard(invalid.into_iter().map(|(e, _)| e.name.clone()).collect::<Vec<_>>().join(", ")).into());
     }
 
-    // Step 4: Check for too many copies of individual cards. This uses the English names from Scryfall
+    // Step 4: Check for too many copies of individual cards.
     let cards = cards.into_iter().map(|(e, c)| (e, c.unwrap())).collect::<Vec<_>>();
-    for (entry, card) in &cards {
-        validate_count(&card.name, entry.count)?;
+    let mut counts = HashMap::new();
+    // merge the counts so you can't do e.g. 1 a 1 b 1 a and get away with it
+    for (entry, _card) in &cards {
+        *counts.entry(&entry.name).or_insert(0) += entry.count;
+    }
+    for (name, count) in &counts {
+        validate_count(name, *count)?;
     }
 
     // TODO: Step 5: Check points
 
     Ok(cards.into_iter().map(|(e, c)| {
         NormalizedCardEntry {
-            name: c.name,
+            id: c,
             count: e.count
         }
     }).collect())
 }
 
-pub fn parse_deck(deck: &str) -> Result<Deck> {
+pub fn parse_deck(conn: &PgConnection, deck: &str) -> Result<Deck> {
     match parse_decklist(deck) {
-        Ok((_, deck)) => validate_decklist(deck),
+        Ok((_, deck)) => validate_decklist(conn, deck),
         Err(e) => {
             println!("{:?}", e);
             Err(DeckError::ParseError(format!("{}", e)).into())
@@ -161,6 +184,7 @@ mod test {
 
     const TEST_CARD: &str = "1 Lazotep Plating (WAR) 59";
     const TEST_ISLAND: &str = "12 Island (ANA) 57";
+    const TEST_PARTIAL: &str = "47 Mountain";
 
     #[test]
     fn parse_card() {
@@ -169,16 +193,24 @@ mod test {
         assert_eq!(rest, RawDeckEntry {
             count: 1,
             name: "Lazotep Plating".to_string(),
-            set: "WAR".to_string(),
-            code: 59
+            set: Some("WAR".to_string()),
+            code: Some(59)
         });
 
         let (_, rest) = card(TEST_ISLAND).unwrap();
         assert_eq!(rest, RawDeckEntry {
             count: 12,
             name: "Island".to_string(),
-            set: "ANA".to_string(),
-            code: 57
+            set: Some("ANA".to_string()),
+            code: Some(57)
+        });
+
+        let (_, rest) = card(TEST_PARTIAL).unwrap();
+        assert_eq!(rest, RawDeckEntry {
+            count: 47,
+            name: "Mountain".to_string(),
+            set: None,
+            code: None
         });
     }
 
@@ -193,11 +225,19 @@ mod test {
 
     #[test]
     fn validation() {
+        use std::env;
+        use diesel::pg::PgConnection;
+        use diesel::prelude::*;
+
+        let database_url = env::var("DATABASE_URL")
+            .expect("DATABASE_URL must be set.");
+        let conn = PgConnection::establish(&database_url)
+            .expect("Unable to connect to database.");
         use super::{parse_decklist, validate_decklist};
         let (_, deck) = parse_decklist(TEST_LIST).unwrap();
-        validate_decklist(deck).unwrap();
+        validate_decklist(&conn, deck).unwrap();
 
         let (_, deck) = parse_decklist(TEST_LIST_INVALID).unwrap();
-        validate_decklist(deck).unwrap_err();
+        validate_decklist(&conn, deck).unwrap_err();
     }
 }

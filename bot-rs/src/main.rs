@@ -1,3 +1,4 @@
+#![recursion_limit="256"]
 #[macro_use] extern crate diesel;
 
 use diesel::prelude::*;
@@ -17,9 +18,13 @@ use serenity::framework::standard::{
     }
 };
 use serenity::model::id::UserId;
-use std::collections::HashSet;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use chrono::prelude::*;
+use chrono::Duration;
 
 mod schema;
+mod cards;
 mod models;
 mod deck_parser;
 
@@ -34,12 +39,24 @@ fn logged_dm(ctx: &Context, user: &User, message: &str) {
     }
 }
 
-struct Handler {
-    pending_registrations: HashSet<UserId>,
+struct DbConn;
+
+impl TypeMapKey for DbConn {
+    type Value = Arc<Mutex<PgConnection>>;
 }
+
+struct PendingRegistrationSet;
+
+impl TypeMapKey for PendingRegistrationSet {
+    type Value = HashMap<UserId, DateTime<Utc>>;
+}
+
+struct Handler; 
 impl EventHandler for Handler {
     fn message(&self, ctx: Context, msg: Message) {
-        if msg.is_private() && !msg.author.bot {
+        let data = ctx.data.read();
+        let pending_registrations = data.get::<PendingRegistrationSet>().unwrap();
+        if msg.is_private() && !msg.author.bot && pending_registrations.contains_key(&msg.author.id) && (Utc::now() - pending_registrations[&msg.author.id]) <= Duration::hours(1) {
             // handle decklists
             let deck = if msg.attachments.is_empty() {
                 // try the message contents
@@ -55,12 +72,20 @@ impl EventHandler for Handler {
                 }
             };
 
-            println!("{}", deck);
-            
-            match deck_parser::parse_deck(&deck) {
-                Ok(_) => logged_dm(&ctx, &msg.author, "Deck successfully registered!"),
-                Err(e) => logged_dm(&ctx, &msg.author, &format!("Unable to register deck: {}", e)),
-            };
+            {
+                let conn = data.get::<DbConn>().unwrap();
+                match deck_parser::parse_deck(&*conn.lock().unwrap(), &deck) {
+                    Ok(_) => logged_dm(&ctx, &msg.author, "Deck successfully registered!"),
+                    Err(e) => {
+                        println!("Parse error: {:?} for decklist {}", e, deck);
+                        logged_dm(&ctx, &msg.author, &format!("Unable to register deck: {}", e))
+                    },
+                };
+            }
+            drop(data);
+            let mut data = ctx.data.write();
+            let pending_registrations = data.get_mut::<PendingRegistrationSet>().unwrap();
+            pending_registrations.remove(&msg.author.id);
         }
     }
 }
@@ -73,10 +98,14 @@ fn main() {
     let conn = PgConnection::establish(&database_url)
         .expect("Unable to connect to database.");
 
-    let mut client = Client::new(&env::var("DISCORD_TOKEN").expect("token to exist."), Handler {
-        pending_registrations: HashSet::new(),
-    })
+    let mut client = Client::new(&env::var("DISCORD_TOKEN").expect("token to exist."), Handler)
         .expect("Error creating Discord Client");
+
+    {
+        let mut data = client.data.write();
+        data.insert::<PendingRegistrationSet>(HashMap::new());
+        data.insert::<DbConn>(Arc::new(Mutex::new(conn)));
+    }
     client.with_framework(StandardFramework::new().configure(|c| c.prefix("!")).group(&LEAGUE_GROUP));
 
     if let Err(why) = client.start() {
@@ -86,8 +115,10 @@ fn main() {
 
 #[command]
 fn register(ctx: &mut Context, msg: &Message) -> CommandResult {
+    let mut data = ctx.data.write();
+    data.get_mut::<PendingRegistrationSet>().unwrap().insert(msg.author.id, Utc::now());
     msg.author.direct_message(&ctx, |m| {
-        m.content("Please export your deck from MTG Arena and paste it here.")
+        m.content("Please export your deck from MTG Arena and paste it here. If Discord asks, upload it as a text file.")
     })?;
     Ok(())
 }

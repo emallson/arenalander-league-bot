@@ -1,15 +1,8 @@
 table! {
-    card_names (id) {
-        id -> Int4,
-        name -> Text,
-    }
-}
-
-table! {
     deck_contents (id) {
         id -> Int4,
         deck -> Nullable<Int4>,
-        card -> Nullable<Int4>,
+        card -> Nullable<Int8>,
         count -> Int4,
     }
 }
@@ -42,13 +35,11 @@ table! {
     }
 }
 
-joinable!(deck_contents -> card_names (card));
 joinable!(deck_contents -> decks (deck));
 joinable!(decks -> leagues (league));
 joinable!(decks -> users (owner));
 
 allow_tables_to_appear_in_same_query!(
-    card_names,
     deck_contents,
     decks,
     leagues,

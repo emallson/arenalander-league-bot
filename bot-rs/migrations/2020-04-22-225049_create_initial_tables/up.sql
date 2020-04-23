@@ -20,14 +20,9 @@ create table decks (
     resigned boolean not null default false
 );
 
-create table card_names (
-    id serial primary key,
-    name text unique not null
-);
-
 create table deck_contents (
     id serial primary key,
     deck int references decks(id),
-    card int references card_names(id),
-    count int not null default 0 check (count > 0)
+    card bigint references cards(id),
+    count int not null
 );

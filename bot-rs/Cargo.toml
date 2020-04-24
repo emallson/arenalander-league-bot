@@ -22,3 +22,7 @@ askama = "0.9.0"
 actix-web = "2.0.0"
 actix-rt = "1.1.0"
 actix-files = "0.2.1"
+
+[[bin]]
+name = "bot"
+path = "src/main.rs"

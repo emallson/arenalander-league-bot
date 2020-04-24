@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use super::schema::*;
-use super::cards::*;
+use uuid::Uuid;
 
 #[allow(non_snake_case)]
 #[derive(Queryable, Insertable)]
@@ -8,6 +8,7 @@ use super::cards::*;
 pub struct User {
     pub id: i32,
     pub discordid: i64,
+    pub name: String,
 }
 
 #[derive(Queryable, Insertable)]
@@ -25,11 +26,25 @@ pub struct League {
 #[belongs_to(parent="League", foreign_key="league")]
 pub struct Deck {
     pub id: i32,
+    pub league: Option<i32>,
     pub owner: i32,
-    pub league: i32,
-    pub wins: i32,
-    pub losses: i32,
+    pub creation_date: DateTime<Utc>,
     pub resigned: bool,
+    pub active: bool,
+}
+
+#[derive(Queryable, Insertable, Associations)]
+#[table_name="matches"]
+#[belongs_to(parent="Deck", foreign_key="winning_deck")]
+// we can't do double belongs_to to the same parent, so winners it is. losers have to get looked up manually
+pub struct Match {
+    pub id: i32,
+    pub date: DateTime<Utc>,
+    pub winning_deck: i32,
+    pub losing_deck: i32,
+    pub winner_wins: i32,
+    pub loser_wins: i32,
+    pub confirmed: bool,
 }
 
 // MTGJSON dump uses ridiculous types
@@ -40,15 +55,39 @@ pub struct Card {
     pub setcode: String,
     pub number: String,
     pub isarena: i64,
+    pub scryfalloracleid: Uuid,
 }
 
 #[allow(non_snake_case)]
 #[derive(Queryable, Insertable, Associations)]
 #[table_name="deck_contents"]
 #[belongs_to(parent="Deck", foreign_key="deck")]
-#[belongs_to(parent="Card", foreign_key="card")]
 pub struct DeckContents {
     pub id: i32,
     pub deck: i32,
-    pub card: i64,
+    pub card: Uuid,
+    pub count: i32,
+}
+
+#[derive(Queryable, Associations)]
+#[belongs_to(parent="Match", foreign_key="matchid")]
+#[belongs_to(parent="User", foreign_key="disputer")]
+pub struct Dispute {
+    pub id: i32,
+    pub matchid: i32,
+    pub disputer: i32,
+    pub date: DateTime<Utc>,
+    pub resolve: bool,
+    pub note: String,
+}
+
+#[derive(Queryable, Associations)]
+#[belongs_to(parent="Deck", foreign_key="id")]
+#[table_name="deck_records"]
+pub struct DeckRecord {
+    pub id: i32,
+    pub match_wins: i64,
+    pub match_losses: i64,
+    pub game_wins: i64,
+    pub game_losses: i64
 }

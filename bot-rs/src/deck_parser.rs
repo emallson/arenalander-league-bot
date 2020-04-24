@@ -9,6 +9,7 @@ use thiserror::Error;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum DeckError {
@@ -78,8 +79,8 @@ struct RawDeck {
 
 #[derive(Debug)]
 pub struct NormalizedCardEntry {
-    id: u32,
-    count: u32,
+    pub uuid: Uuid,
+    pub count: u32,
 }
 
 pub type Deck = Vec<NormalizedCardEntry>;
@@ -109,18 +110,18 @@ fn validate_count(name: &str, count: u32) -> Result<()> {
 }
 
 // TODO: bulk lookup
-fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<u32> {
-    use super::cards::cards::dsl::*;
+fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
+    use super::schema::cards::dsl::*;
 
     if card.code.is_some() && card.set.is_some() {
         // prefer lookup by setcode + number
-        cards.select(id).filter(setcode.eq(card.set.as_ref().unwrap()).and(number.eq(card.code.unwrap().to_string())))
+        cards.select(scryfalloracleid).filter(setcode.eq(card.set.as_ref().unwrap()).and(number.eq(card.code.unwrap().to_string())))
             .first(conn).optional()
-            .expect("Unable to connect to DB for card lookup.").map(|u: i64| u as u32)
+            .expect("Unable to connect to DB for card lookup.")
     } else {
-        cards.select(id).filter(name.eq(&card.name))
+        cards.select(scryfalloracleid).filter(name.eq(&card.name))
             .first(conn).optional()
-            .expect("Unable to connect to DB for card lookup.").map(|u: i64| u as u32)
+            .expect("Unable to connect to DB for card lookup.")
     }
 }
 
@@ -161,7 +162,7 @@ fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
 
     Ok(cards.into_iter().map(|(e, c)| {
         NormalizedCardEntry {
-            id: c,
+            uuid: c,
             count: e.count
         }
     }).collect())
@@ -171,7 +172,7 @@ pub fn parse_deck(conn: &PgConnection, deck: &str) -> Result<Deck> {
     match parse_decklist(deck) {
         Ok((_, deck)) => validate_decklist(conn, deck),
         Err(e) => {
-            println!("{:?}", e);
+            error!("Error while parsing deck: {}", e);
             Err(DeckError::ParseError(format!("{}", e)).into())
         }
     }

@@ -1,0 +1,43 @@
+ol .marginnote, ul .marginnote, ol .sidenote, ul .sidenote { margin-right: -77.7%; }
+ul { list-style-type: inherit; }
+
+ol { width: 45%; }
+@media (max-width: 760px) { ol { width: initial; } }
+
+li > p, li > ul { width: initial; }
+li, li > p { margin-bottom: 0; margin-top: 0; }
+
+h1.title { width: 60%; }
+@media (max-width: 760px) { h1.title { width: 95%; } }
+
+pre { overflow-x: auto; }
+
+code { font-family: Source Code Pro, monospace; }
+
+p code, li code { font-size: 1.1rem; }
+
+article {
+    counter-reset: sidenote-counter;
+}
+
+.sidenote, .marginnote {
+    font-size: 1.2rem;
+    margin-bottom: 12px;
+}
+
+a.no-underline {
+    background: none;
+    text-decoration: none;
+    text-shadow: none;
+}
+
+.sidenote img {
+    max-width: 96%;
+    vertical-align: text-top;
+}
+
+.sidenote .caption {
+    padding-left: 4%;
+    display: inline-block;
+    margin-top: 0.25em;
+}

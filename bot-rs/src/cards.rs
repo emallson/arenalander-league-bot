@@ -1,5 +1,3 @@
-use super::schema::*;
-
 table! {
     cards (id) {
         id -> Int8,
@@ -7,7 +5,6 @@ table! {
         number -> Text,
         setcode -> Text,
         isarena -> Int8,
+        scryfalloracleid -> Uuid,
     }
 }
-
-joinable!(deck_contents -> cards (card));

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>League Standings &mdash; Arena Highlander</title>
+        <meta http-equiv="Content-Type" content="text-html;charset=utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" type="text/css" href="/public/css/libertine.css"/>
+        <link rel="stylesheet" type="text/css" href="/public/css/tufte.css"/>
+        <link rel="stylesheet" type="text/css" href="/public/css/tufte_ext.css"/>
+        <link rel="stylesheet" type="text/css" href="/public/css/columns.css"/>
+        <link rel="stylesheet" type="text/css" href="/public/css/standings.css"/>
+    </head>
+    <body>
+        <header>
+            <div class="title">
+                <h1>League Standings</h1>
+            </div>
+        </header>
+        <table>
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Decklist</th>
+                    <th>Matches</th>
+                    <th>Games</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in contents %}
+                <tr>
+                    <td class="align-center">{{ record.1.name }}</td>
+                    <td class="align-center">
+                        {% if !record.0.active %}
+                        <a href="/decks/{{ record.0.id }}">Decklist</a>
+                        {% if record.0.resigned %}
+                        <em>(Resigned)</em>
+                        {% endif %}
+                        {% else %}
+                        <em>Pending League Completion</em>
+                        {% endif %}
+                    </td>
+                    <td class="align-center">
+                        {{ record.2.match_wins }} &ndash; {{ record.2.match_losses }}
+                    </td>
+                    <td class="align-center">
+                        {{ record.2.game_wins }} &ndash; {{ record.2.game_losses }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>

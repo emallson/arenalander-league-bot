@@ -4,3 +4,4 @@
 [print_schema]
 file = "src/schema.rs"
 filter = { except_tables = ["cards"] }
+patch_file = "src/schema.patch"

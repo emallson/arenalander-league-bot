@@ -1,4 +1,5 @@
 FROM rust
 RUN apt update && apt install libpq5
-ADD .. /opt/bot
+ADD . /opt/bot
+RUN cd /opt/bot && cargo build --release
 CMD cd /opt/bot && cargo run --release

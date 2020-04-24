@@ -1,5 +1,5 @@
 build:
   docker:
-    web: ./bot-rs/docker/Dockerfile.release
+    web: ./bot-rs/Dockerfile.release
 run:
   web: cd /opt/bot/ && cargo run --release

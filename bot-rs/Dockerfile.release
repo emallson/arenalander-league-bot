@@ -1,5 +1,5 @@
 FROM rust
-RUN apt update && apt install libpq5 pgloader
+RUN apt-get update && apt-get install -y libpq5 pgloader
 WORKDIR /opt/bot
 COPY dummy.rs .
 COPY Cargo.toml .

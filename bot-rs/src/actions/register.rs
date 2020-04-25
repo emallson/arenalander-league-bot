@@ -11,6 +11,8 @@ use crate::models::*;
 use chrono::Utc;
 use thiserror::Error;
 use crate::actions::league::current_league as get_league;
+use uuid::Uuid;
+use crate::actions::token::generate_token;
 
 #[derive(Error, Debug)]
 pub enum RegistrationError {
@@ -20,7 +22,7 @@ pub enum RegistrationError {
     NoLeague,
 }
 
-pub fn register_deck(conn: &PgConnection, user: &SerenityUser, parsed_deck: ParsedDeck) -> Result<Deck> {
+pub fn register_deck(conn: &PgConnection, user: &SerenityUser, parsed_deck: ParsedDeck) -> Result<(Deck, Uuid)> {
     let user: User = insert_into(users).values((discordid.eq(*user.id.as_u64() as i64), name.eq(&user.name)))
         .on_conflict(discordid)
         .do_update()
@@ -51,7 +53,8 @@ pub fn register_deck(conn: &PgConnection, user: &SerenityUser, parsed_deck: Pars
         .collect::<Vec<_>>();
     insert_into(deck_contents).values(&contents).execute(conn)?;
 
-    Ok(new_deck)
+    generate_token(conn, new_deck.id)
+        .map(|uuid| (new_deck, uuid))
 }
 
 pub fn resign(conn: &PgConnection, user: &SerenityUser) -> Result<()> {

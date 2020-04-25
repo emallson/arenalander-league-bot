@@ -41,6 +41,8 @@ mod actions;
 mod web;
 mod mana_parser;
 
+const BASE_URL: &str = "http://arenalander.emallson.net";
+
 #[group]
 #[commands(register, league, resign)]
 struct League;
@@ -83,6 +85,10 @@ impl TypeMapKey for PendingResignationSet {
     type Value = HashMap<UserId, DateTime<Utc>>;
 }
 
+fn deck_url(id: i32, token: uuid::Uuid) -> String {
+    format!("{}/deck/{}?token={}", BASE_URL, id, token)
+}
+
 struct Handler; 
 impl EventHandler for Handler {
     fn message(&self, ctx: Context, msg: Message) {
@@ -108,7 +114,10 @@ impl EventHandler for Handler {
                 let conn = data.get::<DbConn>().unwrap().lock().unwrap();
                 match deck_parser::parse_deck(&*conn, &deck)
                     .and_then(|deck| actions::register::register_deck(&*conn, &msg.author, deck)) {
-                    Ok(_) => logged_dm(&ctx, &msg.author, "Deck successfully registered!"),
+                    Ok((deck, token)) => {
+                        let message = format!("Deck successfully registered! You can view it at {}", deck_url(deck.id, token));
+                        logged_dm(&ctx, &msg.author, &message)
+                    },
                     Err(e) => {
                         error!("Parse error: {:?} for decklist {}", e, deck);
                         logged_dm(&ctx, &msg.author, &format!("Unable to register deck: {}", e))
@@ -392,8 +401,17 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
     let conn = data.get::<DbConn>().unwrap().lock().unwrap();
 
     match actions::matches::confirm_match(&*conn, &msg.author) {
-        Ok((Some(_match), winner_done, loser_done)) => {
+        Ok(Some((_match, winner, winner_done, loser_done, winner_deck, winner_token, loser_deck, loser_token))) => {
             msg.channel_id.say(&ctx.http, "Thanks for confirming the match!")?;
+            let winner = winner.to_user(&ctx.http)?;
+
+            logged_dm(ctx, &msg.author, 
+                &format!("Match recorded. Here is your opponent's deck for confirmation: {}",
+                    deck_url(winner_deck, loser_token)));
+            
+            logged_dm(ctx, &winner, 
+                &format!("Match recorded. Here is your opponent's deck for confirmation: {}",
+                    deck_url(loser_deck, winner_token)));
 
             if loser_done {
                 let response = MessageBuilder::new()
@@ -402,8 +420,7 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
                     .build();
                 msg.channel_id.say(&ctx.http, response)?;
             }
-            if let Some(winner_id) = winner_done {
-                let winner = winner_id.to_user(&ctx.http)?;
+            if winner_done {
                 let response = MessageBuilder::new()
                     .mention(&winner)
                     .push(" has completed their league run!")
@@ -411,7 +428,7 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
                 msg.channel_id.say(&ctx.http, response)?;
             }
         },
-        Ok((None, _, _)) => {
+        Ok(None) => {
             msg.channel_id.say(&ctx.http, "Hmm... you don't seem to have an unconfirmed match reported.")?;
         },
         Err(e) => {

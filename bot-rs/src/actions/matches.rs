@@ -9,6 +9,8 @@ use thiserror::Error;
 use serenity::model::user::User as SerenityUser;
 use serenity::model::id::UserId;
 use super::lookup::{lookup_user, lookup_deck, lookup_match};
+use uuid::Uuid;
+use crate::actions::token::generate_token;
 
 #[derive(Error, Debug)]
 pub enum MatchError {
@@ -42,7 +44,8 @@ pub fn report_match(conn: &PgConnection, winner: &SerenityUser, loser: &Serenity
     Ok(())
 }
 
-pub fn confirm_match(conn: &PgConnection, loser: &SerenityUser) -> Result<(Option<Match>, Option<UserId>, bool)> {
+// todo: return value should be a struct here
+pub fn confirm_match(conn: &PgConnection, loser: &SerenityUser) -> Result<Option<(Match, UserId, bool, bool, i32, Uuid, i32, Uuid)>> {
     use crate::schema::decks::dsl::*;
     let loser_deck = lookup_deck(conn, loser)?.unwrap();
 
@@ -51,34 +54,37 @@ pub fn confirm_match(conn: &PgConnection, loser: &SerenityUser) -> Result<(Optio
         .set(confirmed.eq(true))
         .get_result(conn).optional()?;
 
-    let mut loser_done = false;
-    let mut winner = None;
-    if let Some(match_) = res.as_ref() {
+    if let Some(match_) = res {
         const MAX_MATCHES: i64 = 5;
 
-        if count_matches(conn, &loser_deck)? >= MAX_MATCHES {
+        let loser_done = count_matches(conn, &loser_deck)? >= MAX_MATCHES;
+        if loser_done {
             update(decks)
                 .filter(id.eq(loser_deck.id))
                 .set(active.eq(false))
                 .execute(conn)?;
-            loser_done = true;
         }
 
         let winner_deck: Deck = decks.filter(id.eq(match_.winning_deck)).get_result(conn)?;
+        let winner = {
+            use crate::schema::users::dsl::*;
+            UserId(users.select(discordid).filter(id.eq(winner_deck.owner)).get_result::<i64>(conn)? as u64)
+        };
 
-        if count_matches(conn, &winner_deck)? >= MAX_MATCHES {
+        let winner_done = count_matches(conn, &winner_deck)? >= MAX_MATCHES;
+        if winner_done {
             update(decks)
                 .filter(id.eq(loser_deck.id))
                 .set(active.eq(false))
                 .execute(conn)?;
-                {
-                    use crate::schema::users::dsl::*;
-                    winner = Some(UserId(users.select(discordid).filter(id.eq(winner_deck.owner)).get_result::<i64>(conn)? as u64));
-                }
         }
-    }
 
-    Ok((res, winner, loser_done))
+        let winner_token = generate_token(conn, loser_deck.id)?;
+        let loser_token = generate_token(conn, winner_deck.id)?;
+        Ok(Some((match_, winner, winner_done, loser_done, winner_deck.id, winner_token, loser_deck.id, loser_token)))
+    } else {
+        Ok(None)
+    }
 }
 
 fn count_matches(conn: &PgConnection, deck: &Deck) -> Result<i64> {

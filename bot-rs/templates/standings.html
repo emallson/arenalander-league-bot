@@ -8,7 +8,7 @@
         <link rel="stylesheet" type="text/css" href="/public/css/tufte.css"/>
         <link rel="stylesheet" type="text/css" href="/public/css/tufte_ext.css"/>
         <link rel="stylesheet" type="text/css" href="/public/css/columns.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/standings.css"/>
+        <link rel="stylesheet" type="text/css" href="/public/css/base.css"/>
     </head>
     <body>
         <header>
@@ -31,7 +31,7 @@
                     <td class="align-center">{{ record.1.name }}</td>
                     <td class="align-center">
                         {% if !record.0.active %}
-                        <a href="/decks/{{ record.0.id }}">Decklist</a>
+                        <a href="/deck/{{ record.0.id }}">Decklist</a>
                         {% if record.0.resigned %}
                         <em>(Resigned)</em>
                         {% endif %}

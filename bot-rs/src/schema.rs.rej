@@ -1,5 +1,5 @@
---- src/schema.rs	2020-04-24 17:37:00.177127515 -0400
-+++ src/schema_bak.rs	2020-04-24 17:23:27.274783661 -0400
+--- schema.rs	2020-04-24 17:37:00.177127515 -0400
++++ schema_bak.rs	2020-04-24 17:23:27.274783661 -0400
 @@ -55,12 +55,34 @@
          id -> Int4,
          discordid -> Int8,
@@ -30,19 +30,8 @@
 +
 +joinable!(deck_records -> decks (id));
  joinable!(deck_contents -> decks (deck));
- joinable!(deck_view_tokens -> decks (deck));
  joinable!(decks -> leagues (league));
  joinable!(decks -> users (owner));
  joinable!(disputes -> matches (matchid));
  joinable!(disputes -> users (disputer));
  
-@@ -68,7 +90,9 @@
-     deck_contents,
-     decks,
-     disputes,
-     leagues,
-     matches,
-     users,
-+    cards,
-+    deck_records,
- );

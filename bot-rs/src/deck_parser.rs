@@ -135,7 +135,7 @@ fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
 
     // Step 2: Check if too many cards are in the list.
     let count = list.main.iter().map(|e| e.count).sum::<u32>();
-    if count != 100 {
+    if count < 100 {
         return Err(DeckError::WrongSize(count).into());
     }
 

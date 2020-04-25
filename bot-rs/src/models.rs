@@ -48,7 +48,7 @@ pub struct Match {
 }
 
 // MTGJSON dump uses ridiculous types
-#[derive(Queryable)]
+#[derive(Queryable, Clone, PartialEq)]
 pub struct Card {
     pub id: i64,
     pub name: String,
@@ -56,6 +56,9 @@ pub struct Card {
     pub number: String,
     pub isarena: i64,
     pub scryfalloracleid: Uuid,
+    pub manacost: Option<String>,
+    pub types: String,
+    pub convertedmanacost: f64,
 }
 
 #[allow(non_snake_case)]
@@ -90,4 +93,13 @@ pub struct DeckRecord {
     pub match_losses: i64,
     pub game_wins: i64,
     pub game_losses: i64
+}
+
+#[derive(Queryable, Associations)]
+#[table_name="deck_view_tokens"]
+#[belongs_to(parent="Deck", foreign_key="deck")]
+pub struct DeckViewToken {
+    pub id: i32,
+    pub deck: i32,
+    pub token: Uuid,
 }

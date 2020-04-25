@@ -39,6 +39,7 @@ mod models;
 mod deck_parser;
 mod actions;
 mod web;
+mod mana_parser;
 
 #[group]
 #[commands(register, league, resign)]

@@ -66,31 +66,6 @@ table! {
     }
 }
 
-table! {
-    deck_records (id) {
-        id -> Int4,
-        match_wins -> Int8,
-        match_losses -> Int8,
-        game_wins -> Int8,
-        game_losses -> Int8,
-    }
-}
-
-table! {
-    cards (id) {
-        id -> Int8,
-        name -> Text,
-        number -> Text,
-        setcode -> Text,
-        isarena -> Int8,
-        scryfalloracleid -> Uuid,
-        manacost -> Nullable<Text>,
-        types -> Text,
-        convertedmanacost -> Float8,
-    }
-}
-
-joinable!(deck_records -> decks (id));
 joinable!(deck_contents -> decks (deck));
 joinable!(deck_view_tokens -> decks (deck));
 joinable!(decks -> leagues (league));
@@ -106,6 +81,4 @@ allow_tables_to_appear_in_same_query!(
     leagues,
     matches,
     users,
-    cards,
-    deck_records,
 );

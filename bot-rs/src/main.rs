@@ -123,7 +123,10 @@ impl EventHandler for Handler {
 }
 
 fn pre_setup() -> Result<()> {
-    dotenv()?;
+    match dotenv() {
+        Ok(_) => {},
+        Err(e) => warn!("dotenv failed to set environment: {:?}", e),
+    };
 
     fern::Dispatch::new()
         .level(log::LevelFilter::Debug)

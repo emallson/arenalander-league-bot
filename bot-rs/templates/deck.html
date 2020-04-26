@@ -22,9 +22,9 @@
             <div class="deck-sections">
                 {% for (displaytype, section) in sections %}
                 <section class="type-section">
-                    <header>{{ displaytype }} ({{ section.len() }})</header>
+                    <header>{{ displaytype }} ({{ section.count() }})</header>
                     <ul>
-                        {% for card in section %}
+                        {% for card in section.0 %}
                         <li><span class="card-count">{{ card.count }}</span><span class="mtgcard">{{ card.name }}</span>
                             {% if card.cost.is_some() %}
                             <span class="manacost">

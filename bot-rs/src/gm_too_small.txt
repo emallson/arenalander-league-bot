@@ -1,0 +1,83 @@
+Deck
+1 Field of Ruin (XLN) 254
+1 Leafkin Druid (M20) 178
+1 Incubation Druid (RNA) 131
+1 Gilded Goose (ELD) 160
+1 Liliana, Dreadhorde General (WAR) 97
+1 Reclamation Sage (M19) 196
+1 Cavalier of Night (M20) 94
+1 Paradise Druid (WAR) 171
+1 Rankle, Master of Pranks (ELD) 101
+1 End-Raze Forerunners (RNA) 124
+1 Seekers' Squire (XLN) 121
+1 Priest of Forgotten Gods (RNA) 83
+1 Orzhov Enforcer (RNA) 79
+1 Order of Midnight (ELD) 99
+1 Epic Downfall (ELD) 85
+1 Knight of the Ebon Legion (M20) 105
+1 Murderous Rider (ELD) 97
+1 Wildborn Preserver (ELD) 182
+1 Lovestruck Beast (ELD) 165
+1 Vivien, Champion of the Wilds (WAR) 180
+1 Casualties of War (WAR) 187
+1 Ilysian Caryatid (THB) 174
+1 The Gitrog Monster (SOI) 245
+1 Woe Strider (THB) 123
+1 Golos, Tireless Pilgrim (M20) 226
+1 Burglar Rat (GRN) 64
+1 Storrev, Devkarin Lich (WAR) 219
+1 Deathsprout (WAR) 189
+1 Leyline Prowler (WAR) 202
+1 The Great Henge (ELD) 161
+1 Beanstalk Giant (ELD) 149
+1 Shifting Ceratops (M20) 194
+1 Questing Beast (ELD) 171
+1 Guardian Project (RNA) 130
+1 Wayward Swordtooth (RIX) 150
+1 Karn's Bastion (WAR) 248
+1 The First Iroan Games (THB) 170
+1 Polukranos, Unchained (THB) 224
+1 Fabled Passage (ELD) 244
+1 Beast Whisperer (GRN) 123
+1 Thrashing Brontodon (RIX) 148
+1 Jadelight Ranger (RIX) 136
+1 Druid of the Cowl (M19) 177
+10 Swamp (RIX) 194
+1 Llanowar Elves (DAR) 168
+1 The Eldest Reborn (DAR) 90
+1 Vivien Reid (M19) 208
+1 Vraska's Contempt (XLN) 129
+1 Plaguecrafter (GRN) 82
+1 Zagoth Triome (IKO) 259
+1 Midnight Reaper (GRN) 77
+1 Kitesail Freebooter (XLN) 110
+1 Dusk Legion Zealot (RIX) 70
+1 Cast Down (DAR) 81
+10 Forest (RIX) 196
+1 Ravenous Chupacabra (RIX) 82
+1 Multani, Yavimaya's Avatar (DAR) 174
+1 Status // Statue (GRN) 230
+1 Golgari Findbroker (GRN) 175
+1 Temple of Malady (M20) 254
+1 Jungle Hollow (M20) 248
+1 Barren Moor (ONS) 312
+1 Castle Garenbrig (ELD) 240
+1 Castle Locthwain (ELD) 241
+1 Karn, Scion of Urza (DAR) 1
+1 Vraska, Golgari Queen (GRN) GR8
+1 Evolving Wilds (RIX) 186
+1 Arch of Orazca (RIX) 185
+1 Elvish Rejuvenator (M19) 180
+1 Merfolk Branchwalker (XLN) 197
+1 Woodland Cemetery (DAR) 248
+1 Overgrown Tomb (GRN) 253
+1 Golgari Guildgate (GRN) 249
+1 Foul Orchard (M19) 251
+1 Tranquil Thicket (ONS) 326
+1 Indatha Triome (IKO) 248
+1 Field of the Dead (M20) 247
+1 Vivien, Monsters' Advocate (IKO) 175
+1 Kogla, the Titan Ape (IKO) 162
+1 Gyruda, Doom of Depths (IKO) 221
+1 Chevill, Bane of Monsters (IKO) 181
+1 Fiend Artisan (IKO) 220

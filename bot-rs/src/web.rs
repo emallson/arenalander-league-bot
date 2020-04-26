@@ -168,7 +168,7 @@ fn get_deck(
             )
         })
         .fold(BTreeMap::new(), |mut map, (displaytype, card)| {
-            let entry = map.entry(displaytype).or_insert_with(Vec::new);
+            let entry = map.entry(displaytype).or_insert_with(|| CardSection(Vec::new()));
             entry.push(card);
             map
         });
@@ -190,7 +190,29 @@ struct Standings {
     contents: Vec<(Deck, User, DeckRecord)>,
 }
 
-type CardSections = BTreeMap<DisplayType, Vec<DisplayCard>>;
+type CardSections = BTreeMap<DisplayType, CardSection>;
+
+struct CardSection(pub Vec<DisplayCard>);
+
+impl std::ops::Deref for CardSection {
+    type Target = Vec<DisplayCard>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for CardSection {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl CardSection {
+    fn count(&self) -> usize {
+        self.0.iter().map(|c| c.count).sum()
+    }
+}
 
 #[derive(Template)]
 #[template(path = "deck.html")]

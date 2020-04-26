@@ -3,7 +3,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alphanumeric1, char, digit1, line_ending, none_of, space0, space1};
-use nom::combinator::{map, map_res, opt};
+use nom::combinator::{map, map_res, opt, complete};
 use nom::multi::many0;
 use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
@@ -32,14 +32,14 @@ pub struct RawDeckEntry {
     pub name: String,
     pub count: u32,
     pub set: Option<String>,
-    pub code: Option<u32>,
+    pub code: Option<String>,
 }
 
 const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
 
 fn card(input: &str) -> IResult<&str, RawDeckEntry> {
     let count = map_res(digit1, |s: &str| s.parse::<u32>());
-    let title = map(many0(none_of("()")), |s| {
+    let title = map(many0(none_of("()\n")), |s| {
         s.into_iter().collect::<String>().trim().to_string()
     });
     let setcode = map(delimited(char('('), alphanumeric1, char(')')), |code| {
@@ -49,7 +49,7 @@ fn card(input: &str) -> IResult<&str, RawDeckEntry> {
             code
         }
     });
-    let collector_number = map_res(digit1, |s: &str| s.parse::<u32>());
+    let collector_number = alphanumeric1;
     map(
         tuple((
             count,
@@ -64,7 +64,7 @@ fn card(input: &str) -> IResult<&str, RawDeckEntry> {
             count: t.0,
             name: t.2,
             set: t.4.map(|s| s.to_string()),
-            code: t.6,
+            code: t.6.map(|s| s.to_string()),
         },
     )(input)
 }
@@ -78,13 +78,13 @@ fn parse_decklist(list: &str) -> IResult<&str, RawDeck> {
         tuple((tag("Sideboard"), line_ending)),
         many0(terminated(card, opt(line_ending))),
     );
-    let decklist = map(
+    let decklist = complete(map(
         separated_pair(deck, opt(many0(line_ending)), opt(sideboard)),
         |(main, side)| RawDeck {
             main,
             sideboard: side,
         },
-    );
+    ));
 
     decklist(list)
 }
@@ -133,18 +133,25 @@ fn validate_count(name: &str, count: u32) -> Result<()> {
 fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
     use super::schema::cards::dsl::*;
 
-    if card.code.is_some() && card.set.is_some() {
+    let res = if card.code.is_some() && card.set.is_some() {
         // prefer lookup by setcode + number
         cards
             .select(scryfalloracleid)
             .filter(
                 setcode
                     .eq(card.set.as_ref().unwrap())
-                    .and(number.eq(card.code.unwrap().to_string())),
+                    .and(number.eq(card.code.as_ref().unwrap())),
             )
             .first(conn)
             .optional()
             .expect("Unable to connect to DB for card lookup.")
+    } else {
+        None
+    };
+    
+    // not all arena collector numbers are in MTGJSON. This tries to look up by name if we fail to find by code.
+    if res.is_some() {
+        res
     } else {
         cards
             .select(scryfalloracleid)
@@ -231,6 +238,7 @@ mod test {
     const TEST_LIST: &str = include_str!("test_uw.txt");
     const TEST_MAIN_ONLY: &str = include_str!("test_main_only.txt");
     const TEST_LIST_INVALID: &str = include_str!("test_invalid.txt");
+    const REG_TEST_LIST_TOO_SMALL: &str = include_str!("gm_too_small.txt");
 
     const TEST_CARD: &str = "1 Lazotep Plating (WAR) 59";
     const TEST_ISLAND: &str = "12 Island (ANA) 57";
@@ -246,7 +254,7 @@ mod test {
                 count: 1,
                 name: "Lazotep Plating".to_string(),
                 set: Some("WAR".to_string()),
-                code: Some(59)
+                code: Some("59".to_string())
             }
         );
 
@@ -257,7 +265,7 @@ mod test {
                 count: 12,
                 name: "Island".to_string(),
                 set: Some("ANA".to_string()),
-                code: Some(57)
+                code: Some("57".to_string())
             }
         );
 
@@ -300,5 +308,18 @@ mod test {
 
         let (_, deck) = parse_decklist(TEST_LIST_INVALID).unwrap();
         validate_decklist(&conn, deck).unwrap_err();
+    }
+
+    #[test]
+    fn validate_gm_too_small() {
+        use diesel::pg::PgConnection;
+        use diesel::prelude::*;
+        use std::env;
+
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set.");
+        let conn = PgConnection::establish(&database_url).expect("Unable to connect to database.");
+        use super::{parse_decklist, validate_decklist};
+        let (_, deck) = parse_decklist(REG_TEST_LIST_TOO_SMALL).unwrap();
+        validate_decklist(&conn, deck).unwrap();
     }
 }

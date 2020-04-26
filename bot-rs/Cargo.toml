@@ -28,3 +28,7 @@ sentry = { version = "0.18.0", features = ["with_log"]}
 [[bin]]
 name = "bot"
 path = "src/main.rs"
+
+[[bin]]
+name = "dummy"
+path = "dummy.rs"

@@ -249,7 +249,7 @@ fn league(ctx: &mut Context, msg: &Message) -> CommandResult {
     let league = actions::league::current_league(&*conn.lock().unwrap())?;
 
     let message = match league {
-        Some(league) => format!("The {} league is currently active. It began at {} and runs until {}. To register a deck for the league, use !register.", league.title, league.start_date.format("%e %B %Y"), league.end_date.format("%e %B %Y")),
+        Some(league) => format!("The {} League is currently active. It began on {} and runs until {}. To register a deck for the league, use `!register`. League standings can be viewed at {}/standings", league.title, league.start_date.format("%e %B %Y"), league.end_date.format("%e %B %Y"), BASE_URL),
         None => "There is not currently a league active.".to_string()
     };
 

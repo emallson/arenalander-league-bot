@@ -20,13 +20,12 @@ pub enum MatchError {
     MatchPending,
 }
 
-pub fn report_match(conn: &PgConnection, winner: &SerenityUser, loser: &SerenityUser, wins: u32, losses: u32) -> Result<()> {
+pub fn report_match(conn: &PgConnection, winner: &SerenityUser, loser: &SerenityUser, wins: u32, losses: u32) -> Result<Option<()>> {
     let old_match = lookup_match(conn, winner, loser)?; 
 
     if old_match.is_some() {
         return Err(MatchError::MatchExists.into());
     }
-
 
     let winner_deck= lookup_deck(conn, winner)?.unwrap();
     let unconfirmed_match: Option<Match> = matches.filter(winning_deck.eq(winner_deck.id).and(confirmed.eq(false))).get_result(conn).optional()?;
@@ -35,13 +34,15 @@ pub fn report_match(conn: &PgConnection, winner: &SerenityUser, loser: &Serenity
         return Err(MatchError::MatchPending.into());
     }
 
-    let loser_deck = lookup_deck(conn, loser)?.unwrap();
+    if let Some(loser_deck) = lookup_deck(conn, loser)? {
+        insert_into(matches)
+            .values((winning_deck.eq(winner_deck.id), losing_deck.eq(loser_deck.id), winner_wins.eq(wins as i32), loser_wins.eq(losses as i32), date.eq(Utc::now())))
+            .execute(conn)?;
+        Ok(Some(()))
+    } else {
+        Ok(None)
+    }
 
-
-    insert_into(matches)
-        .values((winning_deck.eq(winner_deck.id), losing_deck.eq(loser_deck.id), winner_wins.eq(wins as i32), loser_wins.eq(losses as i32), date.eq(Utc::now())))
-        .execute(conn)?;
-    Ok(())
 }
 
 // todo: return value should be a struct here

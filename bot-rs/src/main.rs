@@ -373,17 +373,31 @@ fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let wins = args.single::<u32>().unwrap();
     let losses = args.single::<u32>().unwrap();
 
+    // confirmation logic depends on winner reporting
+    if wins < losses {
+        msg.channel_id.say(&ctx.http, "Please have the winner report the match.")?;
+        return Ok(());
+    } else if wins < 2 {
+        msg.channel_id.say(&ctx.http, "This league runs Best-of-3 Matches. Please complete a Bo3 match and report back.")?;
+        return Ok(());
+    }
+
     let data = ctx.data.read();
     let conn = data.get::<DbConn>().unwrap().lock().unwrap();
 
     match actions::matches::report_match(&*conn, &msg.author, opponent, wins, losses) {
-        Ok(_) => {
+        Ok(Some(_)) => {
             let response = MessageBuilder::new()
-                .push("Your match has been recorded, but ")
+                .push(format!("You reported that you won {}-{} against {}. ", wins, losses, opponent.name))
                 .mention(opponent)
-                .push(" needs to !match confirm or !match dispute the results. If you made a mistake entering your results, use !match undo")
+                .push(" please use `!match confirm` if the results are correct. If there was an error entering your results, ")
+                .mention(&msg.author)
+                .push(" can use `!match undo`.")
                 .build();
             msg.channel_id.say(&ctx.http, response)?;
+        },
+        Ok(None) => {
+            msg.channel_id.say(&ctx.http, "Unable to record match results. Are both you and your opponent registered for the league?")?;
         },
         Err(e) => {
             error!("Unable to record match: {:?}", e);

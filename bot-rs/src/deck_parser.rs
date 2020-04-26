@@ -60,7 +60,7 @@ fn card(input: &str) -> IResult<&str, RawDeckEntry> {
 }
 
 fn parse_decklist(list: &str) -> IResult<&str, RawDeck> {
-    let deck = preceded(tuple((tag("Deck"), line_ending)), many0(terminated(card, opt(line_ending))));
+    let deck = preceded(opt(tuple((tag("Deck"), line_ending))), many0(terminated(card, opt(line_ending))));
     let sideboard = preceded(tuple((tag("Sideboard"), line_ending)), many0(terminated(card, opt(line_ending))));
     let decklist = map(separated_pair(deck, opt(many0(line_ending)), opt(sideboard)), |(main, side)| {
         RawDeck {
@@ -181,6 +181,7 @@ pub fn parse_deck(conn: &PgConnection, deck: &str) -> Result<Deck> {
 #[cfg(test)]
 mod test {
     const TEST_LIST: &str = include_str!("test_uw.txt");
+    const TEST_MAIN_ONLY: &str = include_str!("test_main_only.txt");
     const TEST_LIST_INVALID: &str = include_str!("test_invalid.txt");
 
     const TEST_CARD: &str = "1 Lazotep Plating (WAR) 59";
@@ -220,6 +221,10 @@ mod test {
         use super::parse_decklist;
         println!("{}", TEST_LIST);
         let (_, deck) = parse_decklist(TEST_LIST).unwrap();
+        assert_eq!(deck.main.len(), 79);
+        assert_eq!(deck.sideboard, None);
+
+        let (_, deck) = parse_decklist(TEST_MAIN_ONLY).unwrap();
         assert_eq!(deck.main.len(), 79);
         assert_eq!(deck.sideboard, None);
     }

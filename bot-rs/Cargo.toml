@@ -23,6 +23,7 @@ actix-web = "2.0.0"
 actix-rt = "1.1.0"
 actix-files = "0.2.1"
 qstring = "0.7.2"
+sentry = { version = "0.18.0", features = ["with_log"]}
 
 [[bin]]
 name = "bot"

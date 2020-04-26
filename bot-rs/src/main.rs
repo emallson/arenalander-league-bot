@@ -136,22 +136,19 @@ impl EventHandler for Handler {
     }
 }
 
-fn pre_setup() -> Result<()> {
+fn pre_setup() -> Result<(log::LevelFilter, Box<dyn log::Log>)> {
     match dotenv() {
         Ok(_) => {}
         Err(e) => warn!("dotenv failed to set environment: {:?}", e),
     };
 
-    fern::Dispatch::new()
+    Ok(fern::Dispatch::new()
         .level(log::LevelFilter::Debug)
         .level_for("serenity", log::LevelFilter::Info)
         .level_for("reqwest", log::LevelFilter::Warn)
         .level_for("rustls", log::LevelFilter::Warn)
         .chain(std::io::stderr())
-        .apply()
-        .unwrap();
-
-    Ok(())
+        .into_log())
 }
 
 fn connect_db() -> Result<PgConnection> {
@@ -206,9 +203,32 @@ fn build_discord_client() -> std::thread::JoinHandle<Result<()>> {
     })
 }
 
+fn setup_sentry(
+    filter: log::LevelFilter,
+    logger: Box<dyn log::Log>,
+) -> Result<Option<sentry::internals::ClientInitGuard>> {
+    if let Ok(token) = env::var("SENTRY_TOKEN") {
+            let guard = sentry::init(token);
+            sentry::integrations::panic::register_panic_handler();
+            let log_options = sentry::integrations::log::LoggerOptions {
+                global_filter: Some(filter),
+                ..Default::default()
+            };
+            sentry::integrations::log::init(Some(logger), log_options);
+
+            Ok(Some(guard))
+    } else {
+        log::set_boxed_logger(logger)?;
+        log::set_max_level(filter);
+        Ok(None)
+    }
+}
+
 #[actix_rt::main]
 async fn main() -> Result<()> {
-    pre_setup()?;
+    let (filter, logger) = pre_setup()?;
+
+    let _sentry_guard = setup_sentry(filter, logger)?;
 
     let discord_handle = build_discord_client();
 

@@ -1,15 +1,12 @@
 version: '2.0'
 services:
   botrs:
-    build: ./bot-rs/docker
+    build: ./bot-rs/
     env_file: ./bot-rs/.env
     ports:
       - "3000:3000"
     depends_on:
       - db
-    volumes:
-      - ./bot-rs/:/opt/bot
-      - ./bot-rs/docker-target/:/opt/bot/target
   db:
     image: postgres:latest
     environment:

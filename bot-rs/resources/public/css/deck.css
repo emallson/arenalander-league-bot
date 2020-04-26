@@ -1,3 +1,6 @@
+.title {
+    margin-top: 4rem;   
+}
 .deck-sections {
     display: flex;
     flex-direction: column;

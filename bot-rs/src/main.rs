@@ -401,7 +401,7 @@ fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         },
         Err(e) => {
             error!("Unable to record match: {:?}", e);
-            msg.channel_id.say(&ctx.http, "Unable to record match.")?;
+            msg.channel_id.say(&ctx.http, format!("Unable to record match: {}", e))?;
         }
     }
 

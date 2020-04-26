@@ -1,6 +1,8 @@
---- src/schema.rs	2020-04-24 17:37:00.177127515 -0400
-+++ src/schema_bak.rs	2020-04-24 17:23:27.274783661 -0400
-@@ -55,12 +55,34 @@
+diff --git b/bot-rs/src/schema.rs a/bot-rs/src/schema.rs
+index 703f513..acdcc0e 100644
+--- b/bot-rs/src/schema.rs
++++ a/bot-rs/src/schema.rs
+@@ -63,12 +63,37 @@ table! {
          id -> Int4,
          discordid -> Int8,
          name -> Text,
@@ -25,6 +27,9 @@
 +        setcode -> Text,
 +        isarena -> Int8,
 +        scryfalloracleid -> Uuid,
++        manacost -> Nullable<Text>,
++        types -> Text,
++        convertedmanacost -> Float8,
 +    }
 +}
 +
@@ -35,9 +40,8 @@
  joinable!(decks -> users (owner));
  joinable!(disputes -> matches (matchid));
  joinable!(disputes -> users (disputer));
- 
-@@ -68,7 +90,9 @@
-     deck_contents,
+@@ -78,7 +103,9 @@ allow_tables_to_appear_in_same_query!(
+     deck_view_tokens,
      decks,
      disputes,
      leagues,

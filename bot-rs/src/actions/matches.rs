@@ -1,16 +1,16 @@
+use super::lookup::{lookup_deck, lookup_match, lookup_user};
+use crate::actions::token::generate_token;
+use crate::models::{Deck, Dispute, Match};
+use crate::schema::matches::dsl::*;
+use anyhow::Result;
+use chrono::Utc;
 use diesel::prelude::*;
 use diesel::PgConnection;
-use diesel::{update, insert_into, delete};
-use crate::schema::matches::dsl::*;
-use crate::models::{Deck, Match, Dispute};
-use chrono::Utc;
-use anyhow::Result;
-use thiserror::Error;
-use serenity::model::user::User as SerenityUser;
+use diesel::{delete, insert_into, update};
 use serenity::model::id::UserId;
-use super::lookup::{lookup_user, lookup_deck, lookup_match};
+use serenity::model::user::User as SerenityUser;
+use thiserror::Error;
 use uuid::Uuid;
-use crate::actions::token::generate_token;
 
 #[derive(Error, Debug)]
 pub enum MatchError {
@@ -20,15 +20,24 @@ pub enum MatchError {
     MatchPending,
 }
 
-pub fn report_match(conn: &PgConnection, winner: &SerenityUser, loser: &SerenityUser, wins: u32, losses: u32) -> Result<Option<()>> {
-    let old_match = lookup_match(conn, winner, loser)?; 
+pub fn report_match(
+    conn: &PgConnection,
+    winner: &SerenityUser,
+    loser: &SerenityUser,
+    wins: u32,
+    losses: u32,
+) -> Result<Option<()>> {
+    let old_match = lookup_match(conn, winner, loser)?;
 
     if old_match.is_some() {
         return Err(MatchError::MatchExists.into());
     }
 
-    let winner_deck= lookup_deck(conn, winner)?.unwrap();
-    let unconfirmed_match: Option<Match> = matches.filter(winning_deck.eq(winner_deck.id).and(confirmed.eq(false))).get_result(conn).optional()?;
+    let winner_deck = lookup_deck(conn, winner)?.unwrap();
+    let unconfirmed_match: Option<Match> = matches
+        .filter(winning_deck.eq(winner_deck.id).and(confirmed.eq(false)))
+        .get_result(conn)
+        .optional()?;
 
     if unconfirmed_match.is_some() {
         return Err(MatchError::MatchPending.into());
@@ -36,24 +45,33 @@ pub fn report_match(conn: &PgConnection, winner: &SerenityUser, loser: &Serenity
 
     if let Some(loser_deck) = lookup_deck(conn, loser)? {
         insert_into(matches)
-            .values((winning_deck.eq(winner_deck.id), losing_deck.eq(loser_deck.id), winner_wins.eq(wins as i32), loser_wins.eq(losses as i32), date.eq(Utc::now())))
+            .values((
+                winning_deck.eq(winner_deck.id),
+                losing_deck.eq(loser_deck.id),
+                winner_wins.eq(wins as i32),
+                loser_wins.eq(losses as i32),
+                date.eq(Utc::now()),
+            ))
             .execute(conn)?;
         Ok(Some(()))
     } else {
         Ok(None)
     }
-
 }
 
 // todo: return value should be a struct here
-pub fn confirm_match(conn: &PgConnection, loser: &SerenityUser) -> Result<Option<(Match, UserId, bool, bool, i32, Uuid, i32, Uuid)>> {
+pub fn confirm_match(
+    conn: &PgConnection,
+    loser: &SerenityUser,
+) -> Result<Option<(Match, UserId, bool, bool, i32, Uuid, i32, Uuid)>> {
     use crate::schema::decks::dsl::*;
     let loser_deck = lookup_deck(conn, loser)?.unwrap();
 
     let res: Option<Match> = update(matches)
         .filter(losing_deck.eq(loser_deck.id).and(confirmed.eq(false)))
         .set(confirmed.eq(true))
-        .get_result(conn).optional()?;
+        .get_result(conn)
+        .optional()?;
 
     if let Some(match_) = res {
         const MAX_MATCHES: i64 = 5;
@@ -69,7 +87,12 @@ pub fn confirm_match(conn: &PgConnection, loser: &SerenityUser) -> Result<Option
         let winner_deck: Deck = decks.filter(id.eq(match_.winning_deck)).get_result(conn)?;
         let winner = {
             use crate::schema::users::dsl::*;
-            UserId(users.select(discordid).filter(id.eq(winner_deck.owner)).get_result::<i64>(conn)? as u64)
+            UserId(
+                users
+                    .select(discordid)
+                    .filter(id.eq(winner_deck.owner))
+                    .get_result::<i64>(conn)? as u64,
+            )
         };
 
         let winner_done = count_matches(conn, &winner_deck)? >= MAX_MATCHES;
@@ -82,19 +105,39 @@ pub fn confirm_match(conn: &PgConnection, loser: &SerenityUser) -> Result<Option
 
         let winner_token = generate_token(conn, loser_deck.id)?;
         let loser_token = generate_token(conn, winner_deck.id)?;
-        Ok(Some((match_, winner, winner_done, loser_done, winner_deck.id, winner_token, loser_deck.id, loser_token)))
+        Ok(Some((
+            match_,
+            winner,
+            winner_done,
+            loser_done,
+            winner_deck.id,
+            winner_token,
+            loser_deck.id,
+            loser_token,
+        )))
     } else {
         Ok(None)
     }
 }
 
 fn count_matches(conn: &PgConnection, deck: &Deck) -> Result<i64> {
-    matches.filter(confirmed.eq(true).and(winning_deck.eq(deck.id).or(losing_deck.eq(deck.id))))
+    matches
+        .filter(
+            confirmed
+                .eq(true)
+                .and(winning_deck.eq(deck.id).or(losing_deck.eq(deck.id))),
+        )
         .count()
-        .get_result(conn).map_err(|e| e.into())
+        .get_result(conn)
+        .map_err(|e| e.into())
 }
 
-pub fn dispute_match(conn: &PgConnection, dsp: &SerenityUser, opponent: &SerenityUser, explanation: &str) -> Result<Option<Dispute>> {
+pub fn dispute_match(
+    conn: &PgConnection,
+    dsp: &SerenityUser,
+    opponent: &SerenityUser,
+    explanation: &str,
+) -> Result<Option<Dispute>> {
     use crate::schema::disputes::dsl::*;
     let match_ = lookup_match(conn, dsp, opponent)?;
 
@@ -105,8 +148,15 @@ pub fn dispute_match(conn: &PgConnection, dsp: &SerenityUser, opponent: &Serenit
     let u_disputer = lookup_user(conn, dsp)?;
     let match_ = match_.unwrap();
     insert_into(disputes)
-        .values((matchid.eq(match_.id), disputer.eq(u_disputer.id), note.eq(explanation), date.eq(Utc::now())))
-        .get_result(conn).map(Option::Some).map_err(|e| e.into())
+        .values((
+            matchid.eq(match_.id),
+            disputer.eq(u_disputer.id),
+            note.eq(explanation),
+            date.eq(Utc::now()),
+        ))
+        .get_result(conn)
+        .map(Option::Some)
+        .map_err(|e| e.into())
 }
 
 pub fn undo_match(conn: &PgConnection, user: &SerenityUser) -> Result<Option<Match>> {
@@ -118,5 +168,7 @@ pub fn undo_match(conn: &PgConnection, user: &SerenityUser) -> Result<Option<Mat
 
     delete(matches)
         .filter(winning_deck.eq(deck.unwrap().id).and(confirmed.eq(false)))
-        .get_result(conn).optional().map_err(|e| e.into())
+        .get_result(conn)
+        .optional()
+        .map_err(|e| e.into())
 }

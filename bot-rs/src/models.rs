@@ -1,10 +1,10 @@
-use chrono::{DateTime, Utc};
 use super::schema::*;
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 #[allow(non_snake_case)]
 #[derive(Queryable, Insertable)]
-#[table_name="users"]
+#[table_name = "users"]
 pub struct User {
     pub id: i32,
     pub discordid: i64,
@@ -12,7 +12,7 @@ pub struct User {
 }
 
 #[derive(Queryable, Insertable)]
-#[table_name="leagues"]
+#[table_name = "leagues"]
 pub struct League {
     pub id: i32,
     pub title: String,
@@ -21,9 +21,9 @@ pub struct League {
 }
 
 #[derive(Queryable, Insertable, Associations)]
-#[table_name="decks"]
-#[belongs_to(parent="User", foreign_key="owner")]
-#[belongs_to(parent="League", foreign_key="league")]
+#[table_name = "decks"]
+#[belongs_to(parent = "User", foreign_key = "owner")]
+#[belongs_to(parent = "League", foreign_key = "league")]
 pub struct Deck {
     pub id: i32,
     pub league: Option<i32>,
@@ -34,8 +34,8 @@ pub struct Deck {
 }
 
 #[derive(Queryable, Insertable, Associations)]
-#[table_name="matches"]
-#[belongs_to(parent="Deck", foreign_key="winning_deck")]
+#[table_name = "matches"]
+#[belongs_to(parent = "Deck", foreign_key = "winning_deck")]
 // we can't do double belongs_to to the same parent, so winners it is. losers have to get looked up manually
 pub struct Match {
     pub id: i32,
@@ -63,8 +63,8 @@ pub struct Card {
 
 #[allow(non_snake_case)]
 #[derive(Queryable, Insertable, Associations)]
-#[table_name="deck_contents"]
-#[belongs_to(parent="Deck", foreign_key="deck")]
+#[table_name = "deck_contents"]
+#[belongs_to(parent = "Deck", foreign_key = "deck")]
 pub struct DeckContents {
     pub id: i32,
     pub deck: i32,
@@ -73,8 +73,8 @@ pub struct DeckContents {
 }
 
 #[derive(Queryable, Associations)]
-#[belongs_to(parent="Match", foreign_key="matchid")]
-#[belongs_to(parent="User", foreign_key="disputer")]
+#[belongs_to(parent = "Match", foreign_key = "matchid")]
+#[belongs_to(parent = "User", foreign_key = "disputer")]
 pub struct Dispute {
     pub id: i32,
     pub matchid: i32,
@@ -85,19 +85,19 @@ pub struct Dispute {
 }
 
 #[derive(Queryable, Associations)]
-#[belongs_to(parent="Deck", foreign_key="id")]
-#[table_name="deck_records"]
+#[belongs_to(parent = "Deck", foreign_key = "id")]
+#[table_name = "deck_records"]
 pub struct DeckRecord {
     pub id: i32,
     pub match_wins: i64,
     pub match_losses: i64,
     pub game_wins: i64,
-    pub game_losses: i64
+    pub game_losses: i64,
 }
 
 #[derive(Queryable, Associations)]
-#[table_name="deck_view_tokens"]
-#[belongs_to(parent="Deck", foreign_key="deck")]
+#[table_name = "deck_view_tokens"]
+#[belongs_to(parent = "Deck", foreign_key = "deck")]
 pub struct DeckViewToken {
     pub id: i32,
     pub deck: i32,

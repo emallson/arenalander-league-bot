@@ -1,5 +1,5 @@
 pub mod league;
-pub mod register;
-pub mod matches;
 mod lookup;
+pub mod matches;
+pub mod register;
 pub mod token;

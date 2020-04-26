@@ -1,9 +1,9 @@
-use uuid::Uuid;
-use diesel::PgConnection;
+use crate::schema::deck_view_tokens::dsl::*;
+use anyhow::Result;
 use diesel::insert_into;
 use diesel::prelude::*;
-use anyhow::Result;
-use crate::schema::deck_view_tokens::dsl::*;
+use diesel::PgConnection;
+use uuid::Uuid;
 
 pub fn generate_token(conn: &PgConnection, deck_id: i32) -> Result<Uuid> {
     insert_into(deck_view_tokens)

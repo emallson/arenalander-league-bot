@@ -15,7 +15,7 @@ type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::TemporaryRedirect()
-        .header("LOCATION", "/standings/")
+        .header("LOCATION", "/standings")
         .finish()
 }
 

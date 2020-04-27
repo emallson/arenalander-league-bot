@@ -33,13 +33,27 @@ default)
 
 ### Database Initialization
 
-The default image should set everything up you need to run. Changes to the schema should be committed to version control using `diesel migration` commands. For example:
+The base docker images should set up *almost* everything. After successfully building, you will need to run:
+
+```bash
+docker-compose up db -d                                        # start the DB first so postgres has time to start
+docker-compose run botrs diesel database setup --locked-schema # setup the DB
+```
+
+Changes to the schema should be committed to version control using `diesel migration` commands. For example:
 
 ```bash
 diesel migration generate example # generation migration named "example"
 # edit your migration
 diesel migration run # run the migration
 diesel migration redo # revert and re-run the migration as necessary to get it right
+```
+
+Some test data is included in `db-setup/test_data.sql`. If you have
+`psql` installed, you can import it with:
+
+```bash
+psql $DATABASE_URL < db-setup/test_data.sql
 ```
 
 ### Running Tests

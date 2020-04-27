@@ -47,9 +47,10 @@ diesel migration redo # revert and re-run the migration as necessary to get it r
 The full test suite requires the database to be running and the `DATABASE_URL` environment variable to be set.
 
 ```bash
-docker-compose up db -d  # start the DB in the background
-export DATABASE_URL=.... # set the DB connection info
-cargo test               # run the tests
+docker-compose up db -d             # start the DB in the background
+export DATABASE_URL=....            # set the DB connection info
+cargo test                          # run the tests
+docker-compose run botrs cargo test # alternative to cargo test if you didn't install rust locally
 ```
 
 ## Deploying

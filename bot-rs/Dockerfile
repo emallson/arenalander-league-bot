@@ -7,5 +7,5 @@ COPY Cargo.toml .
 COPY Cargo.lock .
 RUN cargo build --release --bin dummy --locked
 COPY . .
-RUN cargo build --release --bin bot --locked
+RUN diesel migration run --locked-schema && cargo build --release --bin bot --locked
 CMD cargo run --release --bin bot --locked

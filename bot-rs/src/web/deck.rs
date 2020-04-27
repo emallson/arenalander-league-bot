@@ -9,7 +9,7 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use qstring::QString;
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
+use std::collections::{BTreeSet, BTreeMap};
 use uuid::Uuid;
 use super::DbPool;
 
@@ -54,6 +54,7 @@ struct DisplayCard {
     cmc: f64,                  // uncards on arena, ugh
     cost: Option<Vec<String>>, // lands have no mana cost
     types: String,
+    uuid: Uuid,
 }
 
 impl PartialOrd for DisplayCard {
@@ -109,20 +110,20 @@ fn get_deck(
     }
 
     // at this point, we know we have access to the deck
-    let contents: Vec<(i32, String, f64, Option<String>, String)> = {
+    let contents: Vec<(i32, String, f64, Option<String>, String, Uuid)> = {
         use crate::schema::cards::dsl::*;
         use crate::schema::deck_contents::dsl::*;
         deck_contents
             .filter(deck.eq(deck_id))
             .inner_join(cards.on(scryfalloracleid.eq(card)))
-            .select((count, name, convertedmanacost, manacost, types))
+            .select((count, name, convertedmanacost, manacost, types, scryfalloracleid))
             .distinct()
             .get_results(conn)?
     };
 
     let mut cards = contents
         .into_iter()
-        .map(|(count, name, cmc, cost, types)| {
+        .map(|(count, name, cmc, cost, types, oracleid)| {
             (
                 display_type(&types).unwrap(),
                 DisplayCard {
@@ -131,6 +132,7 @@ fn get_deck(
                     cmc,
                     cost: cost.map(|c| parse_mana(&c).unwrap()),
                     types,
+                    uuid: oracleid
                 },
             )
         })
@@ -142,6 +144,22 @@ fn get_deck(
 
     for val in cards.values_mut() {
         val.sort();
+    }
+
+    // deal with split+adventure cards a BTreeMap maintains its keys in order, which for enums with
+    // #[derive(Ord)] is the order in which they are defined. as a result, Creature come first so
+    // adventure cards will always get displayed as a creature. Other split cards are a crapshot.
+    let mut uuid_map = BTreeSet::new();
+
+    for val in cards.values_mut() {
+        val.0.retain(|card| {
+            if uuid_map.contains(&card.uuid) {
+                false
+            } else {
+                uuid_map.insert(card.uuid);
+                true
+            }
+        });
     }
 
     Ok(Some(DeckTemplate {

@@ -6,6 +6,8 @@ COPY dummy.rs .
 COPY Cargo.toml .
 COPY Cargo.lock .
 RUN cargo build --release --bin dummy --locked
-COPY . .
+COPY src src
+COPY templates templates
 RUN cargo build --release --bin bot --locked
+COPY resources resources
 CMD cargo run --release --bin bot --locked

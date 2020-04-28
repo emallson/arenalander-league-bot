@@ -25,3 +25,17 @@
     font-weight: bold;
     font-style: italic;
 }
+
+@font-face {
+    font-family: 'Linux Biolinum'; /* normal */
+    src: url('fonts/lin-libertine/LinBiolinum_R.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Linux Biolinum'; /* italic */
+    src: url('fonts/lin-libertine/LinBiolinum_RI.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}

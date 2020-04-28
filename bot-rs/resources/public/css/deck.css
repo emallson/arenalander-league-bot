@@ -1,15 +1,17 @@
 .title {
     margin-top: 2rem;
+    margin-bottom: 1rem;
 }
 
 .deck-sections {
-    -webkit-columns: 3 250px;
-    -moz-columns: 3 250px;
-    columns: 3 250px;
+    -webkit-columns: 3 20em;
+    -moz-columns: 3 20em;
+    columns: 3 20em;
     -webkit-column-gap: 2em;
     -moz-column-gap: 2em;
     column-gap: 2em;
     margin-bottom: 2rem;
+    max-width: calc(3 * 20em + 2 * 4em);
 }
 
 footer {

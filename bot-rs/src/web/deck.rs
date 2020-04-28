@@ -1,50 +1,17 @@
 use crate::mana_parser::parse_mana;
-use crate::models::{Deck, DeckRecord, League, User};
-use actix_files as fs;
+use crate::models::{Deck, League, User};
 use actix_web::{
-    get, web, App, HttpRequest, HttpResponse, HttpServer, Responder, Result as WebResult,
+    get, web, HttpRequest, HttpResponse, Responder, Result as WebResult, Scope
 };
 use anyhow::Result;
 use askama::Template;
 use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
 use qstring::QString;
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
-use std::env;
+use std::collections::{BTreeSet, BTreeMap};
 use uuid::Uuid;
-
-fn get_standings(
-    conn: &PgConnection,
-    league_id: Option<i32>,
-) -> Result<Vec<(Deck, User, DeckRecord)>> {
-    use crate::actions::league::current_league;
-    use crate::schema::deck_records::dsl::deck_records;
-    use crate::schema::decks::dsl::*;
-    use crate::schema::users::dsl::users;
-
-    let league_ = if let Some(league_id) = league_id {
-        use crate::schema::leagues::dsl::*;
-        leagues.filter(id.eq(league_id)).get_result(conn)?
-    } else {
-        let league_ = current_league(conn)?;
-
-        if league_.is_none() {
-            return Ok(vec![]);
-        }
-
-        league_.unwrap()
-    };
-
-    let current_decks: Vec<(Deck, User, DeckRecord)> = decks
-        .inner_join(users)
-        .inner_join(deck_records)
-        .filter(league.eq(league_.id))
-        .get_results(conn)?;
-
-    Ok(current_decks)
-}
+use super::DbPool;
 
 #[derive(Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum DisplayType {
@@ -87,6 +54,7 @@ struct DisplayCard {
     cmc: f64,                  // uncards on arena, ugh
     cost: Option<Vec<String>>, // lands have no mana cost
     types: String,
+    uuid: Uuid,
 }
 
 impl PartialOrd for DisplayCard {
@@ -142,20 +110,20 @@ fn get_deck(
     }
 
     // at this point, we know we have access to the deck
-    let contents: Vec<(i32, String, f64, Option<String>, String)> = {
+    let contents: Vec<(i32, String, f64, Option<String>, String, Uuid)> = {
         use crate::schema::cards::dsl::*;
         use crate::schema::deck_contents::dsl::*;
         deck_contents
             .filter(deck.eq(deck_id))
             .inner_join(cards.on(scryfalloracleid.eq(card)))
-            .select((count, name, convertedmanacost, manacost, types))
+            .select((count, name, convertedmanacost, manacost, types, scryfalloracleid))
             .distinct()
             .get_results(conn)?
     };
 
     let mut cards = contents
         .into_iter()
-        .map(|(count, name, cmc, cost, types)| {
+        .map(|(count, name, cmc, cost, types, oracleid)| {
             (
                 display_type(&types).unwrap(),
                 DisplayCard {
@@ -164,17 +132,34 @@ fn get_deck(
                     cmc,
                     cost: cost.map(|c| parse_mana(&c).unwrap()),
                     types,
+                    uuid: oracleid
                 },
             )
         })
         .fold(BTreeMap::new(), |mut map, (displaytype, card)| {
-            let entry = map.entry(displaytype).or_insert_with(Vec::new);
+            let entry = map.entry(displaytype).or_insert_with(|| CardSection(Vec::new()));
             entry.push(card);
             map
         });
 
     for val in cards.values_mut() {
         val.sort();
+    }
+
+    // deal with split+adventure cards a BTreeMap maintains its keys in order, which for enums with
+    // #[derive(Ord)] is the order in which they are defined. as a result, Creature come first so
+    // adventure cards will always get displayed as a creature. Other split cards are a crapshot.
+    let mut uuid_map = BTreeSet::new();
+
+    for val in cards.values_mut() {
+        val.0.retain(|card| {
+            if uuid_map.contains(&card.uuid) {
+                false
+            } else {
+                uuid_map.insert(card.uuid);
+                true
+            }
+        });
     }
 
     Ok(Some(DeckTemplate {
@@ -184,13 +169,29 @@ fn get_deck(
     }))
 }
 
-#[derive(Template)]
-#[template(path = "standings.html")]
-struct Standings {
-    contents: Vec<(Deck, User, DeckRecord)>,
+type CardSections = BTreeMap<DisplayType, CardSection>;
+
+struct CardSection(pub Vec<DisplayCard>);
+
+impl std::ops::Deref for CardSection {
+    type Target = Vec<DisplayCard>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-type CardSections = BTreeMap<DisplayType, Vec<DisplayCard>>;
+impl std::ops::DerefMut for CardSection {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl CardSection {
+    fn count(&self) -> usize {
+        self.0.iter().map(|c| c.count).sum()
+    }
+}
 
 #[derive(Template)]
 #[template(path = "deck.html")]
@@ -200,31 +201,7 @@ struct DeckTemplate {
     sections: CardSections,
 }
 
-#[get("/")]
-async fn index() -> impl Responder {
-    HttpResponse::TemporaryRedirect()
-        .header("LOCATION", "/standings")
-        .finish()
-}
-
-type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-#[get("/standings")]
-async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
-    let conn = pool.get().expect("Unable to get DB connection");
-    let contents = web::block(move || get_standings(&conn, None))
-        .await
-        .map_err(|e| {
-            error!("Unable to retrieve standings: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        })?;
-
-    Ok(HttpResponse::Ok()
-        .content_type("text/html")
-        .body(Standings { contents }.render().unwrap()))
-}
-
-#[get("/deck/{id}")]
+#[get("/{id}")]
 async fn deck(
     req: HttpRequest,
     pool: web::Data<DbPool>,
@@ -254,27 +231,7 @@ async fn deck(
     }
 }
 
-pub async fn build_web_server() -> Result<()> {
-    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
-    let db_url = env::var("DATABASE_URL").unwrap();
-
-    let manager = ConnectionManager::<PgConnection>::new(db_url);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create DB pool.");
-
-    HttpServer::new(move || {
-        App::new()
-            .data(pool.clone())
-            .wrap(actix_web::middleware::Logger::default())
-            .service(fs::Files::new("/public", "resources/public"))
-            .service(index)
-            .service(standings)
-            .service(deck)
-    })
-    .bind(format!("0.0.0.0:{}", port))?
-    .run()
-    .await?;
-
-    Ok(())
+pub fn service() -> Scope {
+    web::scope("/deck")
+        .service(deck)
 }

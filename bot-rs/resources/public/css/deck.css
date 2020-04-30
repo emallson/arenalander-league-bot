@@ -3,11 +3,6 @@
     margin-bottom: 1rem;
 }
 
-#deck-display {
-    display: flow;
-    flex-flow: row wrap;
-}
-
 #deck-matches table, #deck-details table {
     width: initial;
 }

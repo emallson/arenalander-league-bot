@@ -3,6 +3,24 @@
     margin-bottom: 1rem;
 }
 
+#deck-display {
+    display: flow;
+    flex-flow: row wrap;
+}
+
+#deck-matches table, #deck-details table {
+    width: initial;
+}
+
+#deck-matches thead td, #deck-details thead td {
+    font-family: "Linux Biolinum", Palatino, sans-serif;
+    font-variant: small-caps;
+}
+
+#deck-matches td, #deck-details td {
+    padding-right: 1em;
+}
+
 .deck-sections {
     -webkit-columns: 3 20em;
     -moz-columns: 3 20em;
@@ -27,6 +45,7 @@ footer {
 
 .deck-sections header {
     margin-top: 0;
+    font-family: "Linux Biolinum", Palatino, sans-serif;
     font-variant: small-caps;
 }
 

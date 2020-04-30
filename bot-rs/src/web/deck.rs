@@ -1,5 +1,6 @@
 use crate::mana_parser::parse_mana;
-use crate::models::{Deck, League, User};
+use crate::models::{Deck, League, User, Match, DeckRecord};
+use crate::deck_url;
 use actix_web::{
     get, web, HttpRequest, HttpResponse, Responder, Result as WebResult, Scope
 };
@@ -73,6 +74,46 @@ impl Ord for DisplayCard {
     fn cmp(&self, other: &DisplayCard) -> Ordering {
         self.partial_cmp(other).unwrap()
     }
+}
+
+fn get_record(conn: &PgConnection, deck_id: i32) -> Result<DeckRecord> {
+    use crate::schema::deck_records::dsl::*;
+
+    deck_records.filter(id.eq(deck_id)).get_result(conn)
+        .map_err(|e| e.into())
+}
+
+fn get_matches(conn: &PgConnection, deck_id: i32) -> Result<Vec<DisplayMatch>> {
+    use crate::schema::matches::dsl::*;
+    use crate::schema::users::dsl::{users, id as uid};
+    use crate::schema::decks::dsl::{decks, id, owner};
+
+    let confirmed_matches: Vec<(Match, Deck, User)> = matches
+        .filter(confirmed.eq(true).and(winning_deck.eq(deck_id).or(losing_deck.eq(deck_id))))
+        .inner_join(decks.on(id.ne(deck_id).and(id.eq(winning_deck).or(id.eq(losing_deck)))))
+        .inner_join(users.on(uid.eq(owner)))
+        .get_results(conn)?;
+
+    Ok(confirmed_matches.into_iter().map(|(match_, opp_deck, opponent)| {
+        DisplayMatch {
+            match_,
+            opp_deck, 
+            opponent,
+            deck_id
+        }
+    }).collect())
+}
+
+fn get_mw(conn: &PgConnection, deck_ids: Vec<i32>) -> Result<f64> {
+    use crate::schema::deck_records::dsl::*;
+
+    let wl: Vec<(i64, i64)> = deck_records
+        .select((match_wins, match_losses))
+        .filter(id.eq_any(deck_ids))
+        .get_results(conn)?;
+    
+    let num_opp = wl.len();
+    Ok(wl.into_iter().map(|(w, l)| w as f64 / (w + l) as f64).sum::<f64>() / num_opp as f64)
 }
 
 fn get_deck(
@@ -162,10 +203,20 @@ fn get_deck(
         });
     }
 
+    let matches = get_matches(conn, deck_id)?;
+    let record = get_record(conn, deck_id)?;
+    let meta = MetaInfo {
+        match_wins: record.match_wins,
+        match_losses: record.match_losses,
+        omw: 100.0 * get_mw(conn, matches.iter().map(|m| m.opponent_deck_id()).collect())?
+    };
+
     Ok(Some(DeckTemplate {
         user: user_,
         league: league_,
         sections: cards,
+        meta,
+        matches,
     }))
 }
 
@@ -193,12 +244,69 @@ impl CardSection {
     }
 }
 
+struct MetaInfo {
+    match_wins: i64,
+    match_losses: i64,
+    omw: f64,
+}
+
+struct DisplayMatch {
+    match_: Match,
+    deck_id: i32,
+    opponent: User,
+    opp_deck: Deck,
+}
+
+impl DisplayMatch {
+    pub fn is_winner(&self) -> bool {
+        self.match_.winning_deck == self.deck_id
+    }
+
+    pub fn wins(&self) -> i32 {
+        if self.is_winner() {
+            self.match_.winner_wins
+        } else {
+            self.match_.loser_wins
+        }
+    }
+
+    pub fn losses(&self) -> i32 {
+        if self.is_winner() {
+            self.match_.loser_wins
+        } else {
+            self.match_.winner_wins
+        }
+    }
+
+    pub fn opponent(&self) -> &str {
+        self.opponent.name.as_str()
+    }
+
+    fn opponent_deck_id(&self) -> i32 {
+        if self.is_winner() { self.match_.losing_deck } else { self.match_.winning_deck }
+    }
+
+    pub fn opp_deck(&self) -> Option<String> {
+        if self.opp_deck.active {
+            None
+        } else {
+            Some(deck_url(self.opponent_deck_id(), None))
+        }
+    }
+
+    pub fn date(&self) -> String {
+        format!("{}", self.match_.date.format("%e %B %Y"))
+    }
+}
+
 #[derive(Template)]
 #[template(path = "deck.html")]
 struct DeckTemplate {
     user: User,
     league: League,
     sections: CardSections,
+    meta: MetaInfo,
+    matches: Vec<DisplayMatch>,
 }
 
 #[get("/{id}")]

@@ -66,7 +66,7 @@ impl EventHandler for Handler {
                     Ok((deck, token)) => {
                         let message = format!(
                             "Deck successfully registered! You can view it at {}",
-                            deck_url(deck.id, token)
+                            deck_url(deck.id, Some(token))
                         );
                         logged_dm(&ctx, &msg.author, &message)
                     }
@@ -113,8 +113,11 @@ impl TypeMapKey for PendingResignationSet {
     type Value = HashMap<UserId, DateTime<Utc>>;
 }
 
-fn deck_url(id: i32, token: uuid::Uuid) -> String {
-    format!("{}/deck/{}?token={}", BASE_URL, id, token)
+fn deck_url(id: i32, token: Option<uuid::Uuid>) -> String {
+    match token {
+        Some(tok) => format!("{}/deck/{}?token={}", BASE_URL, id, tok),
+        None => format!("{}/deck/{}", BASE_URL, id)
+    }
 }
 
 fn pre_setup() -> Result<(log::LevelFilter, Box<dyn log::Log>)> {

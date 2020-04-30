@@ -112,7 +112,7 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
                 &msg.author,
                 &format!(
                     "Match recorded. Here is your opponent's deck for confirmation: {}",
-                    deck_url(winner_deck, loser_token)
+                    deck_url(winner_deck, Some(loser_token))
                 ),
             );
 
@@ -121,7 +121,7 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
                 &winner,
                 &format!(
                     "Match recorded. Here is your opponent's deck for confirmation: {}",
-                    deck_url(loser_deck, winner_token)
+                    deck_url(loser_deck, Some(winner_token))
                 ),
             );
 

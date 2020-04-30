@@ -10,4 +10,5 @@ COPY src src
 COPY templates templates
 RUN cargo build --release --bin bot --locked
 COPY resources resources
+COPY migrations migrations 
 CMD cargo run --release --bin bot --locked

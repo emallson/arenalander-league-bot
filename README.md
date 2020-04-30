@@ -15,11 +15,13 @@ encouraged.
 
 ### Environment Variables
 
-The bot uses 3 environment variables during its run, two of which are optional:
+The bot uses 3 environment variables during its run, only one of which
+is required:
 
 - `DATABASE_URL` (required): The connection string for the (PostgreSQL) database
 - `DISCORD_TOKEN`: The access token for the discord bot. See their API docs for details.
 - `SENTRY_TOKEN`: The access token for [sentry](https://sentry.io), which is used for logging in production.
+- `PREFIX`: The command prefix used by the bot. Defaults to `!`.
 
 For development, you'll want to copy the [example `.env`
 file](bot-rs/.env.example) to `bot-rs/.env`. The example value provided uses

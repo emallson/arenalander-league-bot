@@ -155,9 +155,11 @@ fn build_discord_client() -> std::thread::JoinHandle<Result<()>> {
             data.insert::<PendingResignationSet>(HashMap::new());
             data.insert::<DbConn>(Arc::new(Mutex::new(conn)));
         }
+
+        let prefix = env::var("PREFIX").unwrap_or_else(|_| "!".to_string());
         client.with_framework(
             StandardFramework::new()
-                .configure(|c| c.prefix("!"))
+                .configure(|c| c.prefix(&prefix))
                 .before(|_ctx, msg, cmd_name| {
                     info!(
                         "Received command {} (message: '{}' from {:?})",

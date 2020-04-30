@@ -44,13 +44,13 @@
                 <header>{{ displaytype }} ({{ section.count() }})</header>
                 <ul>
                     {% for card in section.0 %}
-                    <li><span class="card-count">{{ card.count }}</span><span class="mtgcard">{{ card.name }}</span>
+                    <li><div class="card-count">{{ card.count }}</div><div class="mtgcard">{{ card.name }}</div>
                         {% if card.cost.is_some() %}
-                        <span class="manacost">
+                        <div class="manacost">
                             {% for cost in card.cost.as_ref().unwrap() %}
                             <i class="ms ms-cost ms-{{ cost }}"></i>
                             {% endfor %}
-                        </span>
+                        </div>
                         {% endif %}
                     </li>
                     {% endfor %}
@@ -61,6 +61,9 @@
     </div>
     <div id="deck-matches">
         <h3 class="table-title">Matches</h3>
+        {% if matches.is_empty() %}
+            <div id="no-matches">No matches reported yet. Go play some games!</div>
+        {% else %}
         <table class="match-data">
             <thead>
                 <tr>
@@ -88,6 +91,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 <footer>

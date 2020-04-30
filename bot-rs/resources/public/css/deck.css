@@ -87,3 +87,14 @@ footer {
     box-shadow: -1.5px 1px 0 rgba(0,0,0,0.85);
     -webkit-padding-before: 1px;
 }
+
+#no-matches {
+    width: 80vw;
+    margin-top: 0.2em;
+}
+
+@media all and (min-width: 24rem) {
+    #no-matches {
+        width: 20em;
+    }
+}

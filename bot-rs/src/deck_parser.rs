@@ -7,7 +7,7 @@ use nom::combinator::{map, map_res, opt, complete};
 use nom::multi::many0;
 use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -25,6 +25,8 @@ pub enum DeckError {
     TooManyPoints { points: u32, cards: String },
     #[error("Sideboards are not allowed (you have {0} sideboard cards)")]
     NonEmptySideboard(u32),
+    #[error("Deck contains banned cards: {0}")]
+    BannedCard(String),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -36,6 +38,7 @@ pub struct RawDeckEntry {
 }
 
 const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+const BANNED_CARDS: [&str; 1] = ["785c306c-471c-4699-8ab2-43c253d569cf"];
 
 fn card(input: &str) -> IResult<&str, RawDeckEntry> {
     let count = map_res(digit1, |s: &str| s.parse::<u32>());
@@ -213,6 +216,12 @@ fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
     }
 
     // TODO: Step 5: Check points
+    let banned = BANNED_CARDS.iter().map(|u| Uuid::parse_str(u).unwrap()).collect::<HashSet<_>>();
+
+    let banned = cards.iter().filter_map(|(e, c)| if banned.contains(c) { Some(e.name.clone()) } else { None }).collect::<Vec<_>>();
+    if !banned.is_empty() {
+        return Err(DeckError::BannedCard(banned.join(", ")).into());
+    }
 
     Ok(cards
         .into_iter()

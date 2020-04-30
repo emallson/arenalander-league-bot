@@ -100,10 +100,11 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
 #[get("/{id}")]
 async fn standings_for(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> WebResult<impl Responder> {
     let conn = pool.get().expect("Unable to get DB connection");
-    let leaders_p = web::block(move || get_user_standings(&conn, Some(path.0)));
+    let lid = path.0;
+    let leaders_p = web::block(move || get_user_standings(&conn, Some(lid)));
 
     let conn = pool.get().expect("Unable to get DB connection");
-    let contents = web::block(move || get_standings(&conn, Some(path.0)))
+    let contents = web::block(move || get_standings(&conn, Some(lid)))
         .await
         .map_err(|e| {
             error!("Unable to retrieve standings: {:?}", e);

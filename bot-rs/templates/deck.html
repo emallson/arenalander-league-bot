@@ -3,6 +3,7 @@
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="/public/css/deck.css" />
+<link href="//cdn.jsdelivr.net/npm/mana-font@latest/css/mana.css" rel="stylesheet" type="text/css" /> 
 <script src="http://tappedout.net/tappedout.js"></script>
 {% endblock %}
 
@@ -47,7 +48,7 @@
                         {% if card.cost.is_some() %}
                         <span class="manacost">
                             {% for cost in card.cost.as_ref().unwrap() %}
-                            <img src="/public/img/mana/mana-{{ cost }}.png" alt="{{ cost }}" />
+                            <i class="ms ms-cost ms-{{ cost }}"></i>
                             {% endfor %}
                         </span>
                         {% endif %}
@@ -73,7 +74,7 @@
                 {% for match_ in matches %}
                 <tr>
                     <td>{{ match_.wins() }}&ndash;{{ match_.losses() }}</td>
-                    <td>
+                    <td class="ellipses">
                         {% match match_.opp_deck() %}
                         {% when Some with (link) %}
                         <a href="{{ link }}">Decklist</a>
@@ -90,7 +91,7 @@
     </div>
 </div>
 <footer>
-    Card images are provided by <a href="https://tappedout.github.io/">TappedOut</a><br />
-    Mana symbols taken from the Manamoji pack provided by <a href="https://scryfall.com">Scryfall</a>
+    Card images are provided by <a href="https://tappedout.github.io/">TappedOut</a>.<br />
+    Mana symbols are provided by Andrew Gioia's <a href="https://andrewgioia.github.io/Mana/index.html">Mana font</a>.
 </footer>
 {% endblock %}

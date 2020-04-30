@@ -50,14 +50,14 @@
             <thead>
                 <tr>
                     <td>Player</td>
-                    <td class="align-center">Points</td>
+                    <td>Points</td>
                 </tr>
             </thead>
             <tbody>
                 {% for record in leaders %}
                 <tr>
                     <td>{{ record.0 }}</td>
-                    <td class="align-center">{{ record.1 }}</td>
+                    <td class="align-right">{{ record.1 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

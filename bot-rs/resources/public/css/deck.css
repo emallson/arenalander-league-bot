@@ -12,8 +12,14 @@
 }
 
 #deck-matches td, #deck-details td {
-    padding-right: 1em;
+    padding-right: 1vw; /* padding gets smaller on smaller screens...but not too small */
     white-space: nowrap;
+}
+
+.ellipses {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 20vw;
 }
 
 .deck-sections {
@@ -28,6 +34,7 @@
 }
 
 footer {
+    margin-top: 2rem;
     margin-bottom: 2rem;
 }
 
@@ -75,11 +82,7 @@ footer {
     background: none;
 }
 
-/* Shamelessly copying their visuals, with some tweaks. */
-.manacost img {
-    width: 15px;
-    height: 15px;
-    box-shadow: -1px 1px 0 rgba(0,0,0,0.85);
-    border-radius: 500px;
-    display: inline-block;
+.manacost > i {
+    font-size: 11px;
+    box-shadow: -1.5px 1px 0 rgba(0,0,0,0.85);
 }

@@ -2,6 +2,10 @@ h1, h2, h3 {
 font-family: "Linux Biolinum", Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
 }
 
+.table-title {
+    border-bottom: solid 1px black;
+}
+
 .nobreak {
     white-space: nowrap;
 }
@@ -56,4 +60,9 @@ table {
 
 .align-center {
     text-align: center;
+}
+
+thead td {
+    font-family: "Linux Biolinum", Palatino, sans-serif;
+    font-variant: small-caps;
 }

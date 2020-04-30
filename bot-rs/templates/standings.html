@@ -1,58 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>League Standings &mdash; Arena Highlander</title>
-        <meta http-equiv="Content-Type" content="text-html;charset=utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_R.woff2" as="font" type="font/woff2">
-        <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_RI.woff2" as="font" type="font/woff2">
-        <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_RBI.woff2" as="font" type="font/woff2">
-        <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinBiolinum_R.woff2" as="font" type="font/woff2">
-        <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinBiolinum_RI.woff2" as="font" type="font/woff2">
-        <link rel="stylesheet" type="text/css" href="/public/css/libertine.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/tufte.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/tufte_ext.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/columns.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/base.css"/>
-    </head>
-    <body>
-        <header>
-            <div class="title">
-                <h1>League Standings</h1>
-            </div>
-        </header>
-        <table>
-            <thead>
-                <tr>
-                    <th>Player</th>
-                    <th>Decklist</th>
-                    <th>Matches</th>
-                    <th>Games</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in contents %}
-                <tr>
-                    <td class="align-center">{{ record.1.name }}</td>
-                    <td class="align-center">
-                        {% if !record.0.active %}
-                        <a href="/deck/{{ record.0.id }}">Decklist</a>
-                        {% if record.0.resigned %}
-                        <em>(Resigned)</em>
-                        {% endif %}
-                        {% else %}
-                        <em>Pending League Completion</em>
-                        {% endif %}
-                    </td>
-                    <td class="align-center">
-                        {{ record.2.match_wins }} &ndash; {{ record.2.match_losses }}
-                    </td>
-                    <td class="align-center">
-                        {{ record.2.game_wins }} &ndash; {{ record.2.game_losses }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </body>
+
+<head>
+    <title>League Standings &mdash; Arena Highlander</title>
+    <meta http-equiv="Content-Type" content="text-html;charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_R.woff2" as="font"
+        type="font/woff2">
+    <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_RI.woff2" as="font"
+        type="font/woff2">
+    <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_RBI.woff2" as="font"
+        type="font/woff2">
+    <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinBiolinum_R.woff2" as="font"
+        type="font/woff2">
+    <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinBiolinum_RI.woff2" as="font"
+        type="font/woff2">
+    <link rel="stylesheet" type="text/css" href="/public/css/libertine.css" />
+    <link rel="stylesheet" type="text/css" href="/public/css/tufte.css" />
+    <link rel="stylesheet" type="text/css" href="/public/css/tufte_ext.css" />
+    <link rel="stylesheet" type="text/css" href="/public/css/columns.css" />
+    <link rel="stylesheet" type="text/css" href="/public/css/base.css" />
+    <link rel="stylesheet" type="text/css" href="/public/css/standings.css" />
+</head>
+
+<body>
+    <header>
+        <div class="title">
+            <h1>League Standings</h1>
+        </div>
+    </header>
+    <div id="standings-container">
+        <div id="decks">
+            <h2 class="table-title">Decks</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Player</td>
+                        <td>Decklist</td>
+                        <td class="align-center">Matches</td>
+                        <td class="align-center">Games</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in contents %}
+                    <tr>
+                        <td>{{ record.1.name }}</td>
+                        <td>
+                            {% if !record.0.active %}
+                            <a href="/deck/{{ record.0.id }}">Decklist</a>
+                            {% if record.0.resigned %}
+                            <em>(Resigned)</em>
+                            {% endif %}
+                            {% else %}
+                            <em>Pending League Completion</em>
+                            {% endif %}
+                        </td>
+                        <td class="align-center">
+                            {{ record.2.match_wins }} &ndash; {{ record.2.match_losses }}
+                        </td>
+                        <td class="align-center">
+                            {{ record.2.game_wins }} &ndash; {{ record.2.game_losses }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div id="users">
+            <h2 class="table-title">Leaderboard</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Player</td>
+                        <td class="align-center">Points</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in leaders %}
+                    <tr>
+                        <td>{{ record.0 }}</td>
+                        <td class="align-center">{{ record.1 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+
 </html>

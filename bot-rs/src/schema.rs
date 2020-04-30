@@ -77,6 +77,16 @@ table! {
 }
 
 table! {
+    leaderboard (id) {
+        id -> Int4,
+        name -> Text,
+        league -> Int4,
+        wins -> Int8,
+        complete_runs -> Int8,
+    }
+}
+
+table! {
     cards (id) {
         id -> Int8,
         name -> Text,
@@ -91,6 +101,8 @@ table! {
 }
 
 joinable!(deck_records -> decks (id));
+joinable!(leaderboard -> users (id));
+joinable!(leaderboard -> leagues (league));
 joinable!(deck_contents -> decks (deck));
 joinable!(deck_view_tokens -> decks (deck));
 joinable!(decks -> leagues (league));
@@ -108,4 +120,5 @@ allow_tables_to_appear_in_same_query!(
     users,
     cards,
     deck_records,
+    leaderboard,
 );

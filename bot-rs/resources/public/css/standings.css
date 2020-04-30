@@ -1,0 +1,14 @@
+#standings-container {
+    display: flex;
+    flex-flow: row wrap;
+}
+
+#decks {
+    margin-right: 2em;
+}
+
+#standings-container td {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-right: 2em;
+}

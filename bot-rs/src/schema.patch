@@ -1,8 +1,8 @@
 diff --git b/bot-rs/src/schema.rs a/bot-rs/src/schema.rs
-index 703f513..acdcc0e 100644
+index 703f513..9285e19 100644
 --- b/bot-rs/src/schema.rs
 +++ a/bot-rs/src/schema.rs
-@@ -63,12 +63,37 @@ table! {
+@@ -63,12 +63,49 @@ table! {
          id -> Int4,
          discordid -> Int8,
          name -> Text,
@@ -16,6 +16,16 @@ index 703f513..acdcc0e 100644
 +        match_losses -> Int8,
 +        game_wins -> Int8,
 +        game_losses -> Int8,
++    }
++}
++
++table! {
++    leaderboard (id) {
++        id -> Int4,
++        name -> Text,
++        league -> Int4,
++        wins -> Int8,
++        complete_runs -> Int8,
 +    }
 +}
 +
@@ -34,13 +44,15 @@ index 703f513..acdcc0e 100644
 +}
 +
 +joinable!(deck_records -> decks (id));
++joinable!(leaderboard -> users (id));
++joinable!(leaderboard -> leagues (league));
  joinable!(deck_contents -> decks (deck));
  joinable!(deck_view_tokens -> decks (deck));
  joinable!(decks -> leagues (league));
  joinable!(decks -> users (owner));
  joinable!(disputes -> matches (matchid));
  joinable!(disputes -> users (disputer));
-@@ -78,7 +103,9 @@ allow_tables_to_appear_in_same_query!(
+@@ -78,7 +115,10 @@ allow_tables_to_appear_in_same_query!(
      deck_view_tokens,
      decks,
      disputes,
@@ -49,4 +61,5 @@ index 703f513..acdcc0e 100644
      users,
 +    cards,
 +    deck_records,
++    leaderboard,
  );

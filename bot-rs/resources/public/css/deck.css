@@ -3,17 +3,17 @@
     margin-bottom: 1rem;
 }
 
+#deck-matches {
+    width: min-content;
+}
+
 #deck-matches table, #deck-details table {
     width: initial;
 }
 
-#deck-matches thead td, #deck-details thead td {
-    font-family: "Linux Biolinum", Palatino, sans-serif;
-    font-variant: small-caps;
-}
-
 #deck-matches td, #deck-details td {
     padding-right: 1em;
+    white-space: nowrap;
 }
 
 .deck-sections {

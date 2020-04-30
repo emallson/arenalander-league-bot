@@ -38,7 +38,6 @@ fn get_user_standings(conn: &PgConnection, league_id: Option<i32>) -> Result<Vec
         .select((name, wins, complete_runs))
         .filter(league.eq(lid))
         .get_results(conn)?;
-
     
     let mut results = results.into_iter().map(|(u, w, runs)| (u, (w + runs) as usize)).collect::<Vec<_>>();
     results.sort_by_key(|&(_, points)| std::cmp::Reverse(points));
@@ -101,7 +100,7 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
 #[get("/{id}")]
 async fn standings_for(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> WebResult<impl Responder> {
     let conn = pool.get().expect("Unable to get DB connection");
-    let leaders_p = web::block(move || get_user_standings(&conn, None));
+    let leaders_p = web::block(move || get_user_standings(&conn, Some(path.0)));
 
     let conn = pool.get().expect("Unable to get DB connection");
     let contents = web::block(move || get_standings(&conn, Some(path.0)))

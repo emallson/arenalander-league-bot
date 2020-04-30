@@ -98,7 +98,7 @@ pub fn confirm_match(
         let winner_done = count_matches(conn, &winner_deck)? >= MAX_MATCHES;
         if winner_done {
             update(decks)
-                .filter(id.eq(loser_deck.id))
+                .filter(id.eq(winner_deck.id))
                 .set(active.eq(false))
                 .execute(conn)?;
         }

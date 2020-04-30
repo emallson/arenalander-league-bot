@@ -1,6 +1,7 @@
 use crate::{
     actions, DbConn, PendingRegistrationSet, PendingResignationSet, ACTIVE_CHECK, BASE_URL,
 };
+use std::collections::HashMap;
 use chrono::{Duration, Utc};
 use serenity::framework::standard::{
     macros::{command, group},
@@ -119,24 +120,40 @@ fn opponents(ctx: &mut Context, msg: &Message) -> CommandResult {
                         // should only ever be 1
                         let unconfirmed = opps
                             .iter()
-                            .filter(|(_, confirmed)| !*confirmed)
-                            .map(|(opp, _)| opp.clone())
+                            .filter(|opp| !opp.confirmed)
+                            .map(|opp| opp.name.clone())
                             .collect::<Vec<_>>()
                             .join("\n");
+
+                        let mut inactive_map = opps.iter().filter(|opp| opp.confirmed && !opp.active)
+                            .map(|opp| (opp.discordid, opp.name.clone())).collect::<HashMap<_, _>>();
+
+                        // only includes confirmed & active
                         let confirmed = opps
                             .into_iter()
-                            .filter(|(_, confirmed)| *confirmed)
-                            .map(|(opp, _)| opp)
+                            .filter(|opp| opp.confirmed && opp.active)
+                            .map(|opp| {
+                                // if we encounter an active and confirmed match against an opponent, they cannot also be inactive
+                                inactive_map.remove(&opp.discordid);
+                                opp.name
+                            })
                             .collect::<Vec<_>>()
                             .join("\n");
+
+                        let inactive = inactive_map.into_iter().map(|(_, val)| val).collect::<Vec<_>>().join("\n");
+
                         e.title("Opponents in Current League")
-                            .description("You have already played against these individuals, and cannot replay them during your current run.");
+                            .description("You have already played against these individuals, and cannot replay them during your current run unless they are listed as eligible for rematch.");
                         if !confirmed.is_empty() {
                             e.field("Confirmed", confirmed, true);
                         }
 
                         if !unconfirmed.is_empty() {
                             e.field("Unconfirmed", unconfirmed, true);
+                        }
+
+                        if !inactive.is_empty() {
+                            e.field("Eligible for Rematch", inactive, true);
                         }
 
                         e

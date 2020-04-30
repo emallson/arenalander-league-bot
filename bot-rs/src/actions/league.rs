@@ -5,7 +5,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel::PgConnection;
-use diesel::{delete, insert_into};
+use diesel::{delete, insert_into, update};
 use serenity::model::user::User as SerenityUser;
 
 pub fn create_league(
@@ -44,4 +44,14 @@ pub fn current_league(conn: &PgConnection) -> Result<Option<League>> {
 pub fn check_active(conn: &PgConnection, discord_user: &SerenityUser) -> Result<bool> {
     let deck = lookup_deck(conn, discord_user)?;
     Ok(deck.is_some())
+}
+
+pub fn finalize_league(conn: &PgConnection, league_id: i32) -> Result<usize> {
+    use crate::schema::decks::dsl::{decks, league, active};
+
+    update(decks)
+        .filter(league.eq(league_id))
+        .set(active.eq(false))
+        .execute(conn)
+        .map_err(|e| e.into())
 }

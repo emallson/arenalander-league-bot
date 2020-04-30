@@ -226,7 +226,9 @@ async fn main() -> Result<()> {
 }
 
 #[help]
-#[lacking_permissions = "Hide"]
+#[lacking_permissions = "hide"]
+#[lacking_role = "hide"]
+#[lacking_ownership = "hide"]
 fn help_cmd(
     ctx: &mut Context,
     msg: &Message,

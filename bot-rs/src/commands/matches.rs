@@ -17,6 +17,7 @@ use crate::{ACTIVE_CHECK, DbConn, actions, deck_url, logged_dm};
 pub(crate) struct LeagueMatchGroup;
 
 #[command]
+#[only_in(guilds)]
 #[aliases("results")]
 #[description("Report match results")]
 #[usage("@opponent <your wins> <opponent wins>")]
@@ -87,6 +88,7 @@ fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
 }
 
 #[command]
+#[only_in(guilds)]
 #[description("Confirm match results")]
 fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read();
@@ -156,6 +158,7 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[only_in(guilds)]
 #[description("Undo match report. Use if you accidentally report the wrong results. This can only be done on unconfirmed matches and only by the player that submitted the match report.")]
 fn undo(ctx: &mut Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read();
@@ -182,6 +185,7 @@ fn undo(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[only_in(guilds)]
 #[description("Dispute match results. Please only do this if you and your opponent are unable to resolve things yourselves.")]
 #[usage("@opponent <explanation>")]
 #[min_args(0)]

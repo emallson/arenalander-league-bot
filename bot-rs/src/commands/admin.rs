@@ -14,10 +14,11 @@ use crate::actions;
 #[prefix("admin")]
 #[only_in(guilds)]
 #[required_permissions("ADMINISTRATOR")]
-#[commands(new_league, list_leagues, delete_league)]
+#[commands(new_league, list_leagues, delete_league, finalize_league)]
 pub(crate) struct LeagueControl;
 
 #[command]
+#[only_in(guilds)]
 #[num_args(3)]
 #[delimiters(", ")]
 #[description("Define a new league. All times are in UTC")]
@@ -41,6 +42,7 @@ fn new_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult
 }
 
 #[command]
+#[only_in(guilds)]
 #[description("List all existing leagues (includes inactive leagues).")]
 fn list_leagues(ctx: &mut Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read();
@@ -66,6 +68,7 @@ fn list_leagues(ctx: &mut Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[only_in(guilds)]
 #[description("Delete a league. All associated decks will exist, but be unassigned to any league.")]
 #[num_args(1)]
 #[usage("<id>")]
@@ -77,6 +80,25 @@ fn delete_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandRes
     let _count = actions::league::delete_league(&*conn.lock().unwrap(), id)
         .expect("Unable to delete league");
     let message = format!("Deleted league {}", id);
+    msg.channel_id.say(&ctx.http, &message)?;
+
+    Ok(())
+}
+
+
+#[command]
+#[only_in(guilds)]
+#[description("Set all league decks to inactive. Should ONLY be used on leagues that have ended.")]
+#[num_args(1)]
+#[usage("<id>")]
+fn finalize_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
+    let id = args.single::<i32>()?;
+    let data = ctx.data.read();
+    let conn = data.get::<DbConn>().unwrap();
+
+    let count = actions::league::finalize_league(&*conn.lock().unwrap(), id)
+        .expect("Unable to finalize league");
+    let message = format!("Finalized league {}, marking {} decks as inactive.", id, count);
     msg.channel_id.say(&ctx.http, &message)?;
 
     Ok(())

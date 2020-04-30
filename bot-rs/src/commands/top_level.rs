@@ -1,11 +1,13 @@
+use crate::{
+    actions, DbConn, PendingRegistrationSet, PendingResignationSet, ACTIVE_CHECK, BASE_URL,
+};
 use chrono::{Duration, Utc};
 use serenity::framework::standard::{
-    macros::{group, command},
-    CommandResult, 
+    macros::{command, group},
+    CommandResult,
 };
 use serenity::model::channel::Message;
 use serenity::prelude::*;
-use crate::{ACTIVE_CHECK, DbConn, actions, PendingRegistrationSet, BASE_URL, PendingResignationSet};
 
 #[group]
 #[commands(register, league, resign, opponents)]
@@ -109,24 +111,47 @@ fn opponents(ctx: &mut Context, msg: &Message) -> CommandResult {
 
     match actions::matches::list_opponents(&*conn, &msg.author) {
         Ok(Some(opps)) => {
-            msg.author.dm(&ctx.http, |m| {
-                m.embed(|e| {
-                    // should only ever be 1
-                    let unconfirmed = opps.iter().filter(|(_, confirmed)| !*confirmed).map(|(opp, _)| opp.clone()).collect::<Vec<_>>().join("\n");
-                    let confirmed = opps.into_iter().filter(|(_, confirmed)| *confirmed).map(|(opp, _)| opp).collect::<Vec<_>>().join("\n");
-                    e.title("Opponents in Current League")
-                        .field("Confirmed", confirmed, false)
-                        .field("Unconfirmed", unconfirmed, false)
-                });
-                m
-            })?;
-        },
+            if opps.is_empty() {
+                msg.channel_id.say(&ctx.http, "You have not played any matches in the current league.")?;
+            } else {
+                msg.channel_id.send_message(&ctx.http, |m| {
+                    m.embed(|e| {
+                        // should only ever be 1
+                        let unconfirmed = opps
+                            .iter()
+                            .filter(|(_, confirmed)| !*confirmed)
+                            .map(|(opp, _)| opp.clone())
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        let confirmed = opps
+                            .into_iter()
+                            .filter(|(_, confirmed)| *confirmed)
+                            .map(|(opp, _)| opp)
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        e.title("Opponents in Current League")
+                            .description("You have already played against these individuals, and cannot replay them during your current run.");
+                        if !confirmed.is_empty() {
+                            e.field("Confirmed", confirmed, true);
+                        }
+
+                        if !unconfirmed.is_empty() {
+                            e.field("Unconfirmed", unconfirmed, true);
+                        }
+
+                        e
+                    });
+                    m
+                })?;
+            }
+        }
         Ok(None) => {
-            msg.author.dm(&ctx.http, |m| m.content("You have not played any matches in the current league."))?;
-        },
+            msg.channel_id.say(&ctx.http, "You have not played any matches in the current league.")?;
+        }
         Err(err) => {
             error!("Error processing !opponents: {:?}", err);
-            msg.channel_id.say(&ctx.http, "Unable to retrieve opponent list.")?;
+            msg.channel_id
+                .say(&ctx.http, "Unable to retrieve opponent list.")?;
         }
     }
     Ok(())

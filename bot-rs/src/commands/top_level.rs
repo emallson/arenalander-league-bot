@@ -111,9 +111,12 @@ fn opponents(ctx: &mut Context, msg: &Message) -> CommandResult {
         Ok(Some(opps)) => {
             msg.author.dm(&ctx.http, |m| {
                 m.embed(|e| {
-                    let desc = opps.into_iter().map(|(opp, confirmed)| format!("{}\t{}", opp, if confirmed { "Confirmed" } else { "Unconfirmed" })).collect::<Vec<_>>().join("\n");
+                    // should only ever be 1
+                    let unconfirmed = opps.iter().filter(|(_, confirmed)| !*confirmed).map(|(opp, _)| opp.clone()).collect::<Vec<_>>().join("\n");
+                    let confirmed = opps.into_iter().filter(|(_, confirmed)| *confirmed).map(|(opp, _)| opp).collect::<Vec<_>>().join("\n");
                     e.title("Opponents in Current League")
-                    .description(desc)
+                        .field("Confirmed", confirmed, false)
+                        .field("Unconfirmed", unconfirmed, false)
                 });
                 m
             })?;

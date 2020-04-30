@@ -5,7 +5,7 @@ create view leaderboard (id, league, name, wins, complete_runs) as (
         decks.league as league,
         users.name as name,
         SUM(match_wins)::bigint as wins,
-        count(case when not active and not resigned then 1 end) as complete_runs
+        count(case when match_wins + match_losses = 5 then 1 end) as complete_runs
     from users
     left join decks on users.id = decks.owner
     left join deck_records on deck_records.id = decks.id

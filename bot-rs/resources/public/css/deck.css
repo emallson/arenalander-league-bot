@@ -85,4 +85,5 @@ footer {
 .manacost > i {
     font-size: 11px;
     box-shadow: -1.5px 1px 0 rgba(0,0,0,0.85);
+    -webkit-padding-before: 1px;
 }

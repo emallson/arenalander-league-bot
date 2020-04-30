@@ -1,5 +1,9 @@
 h1, h2, h3 {
-font-family: "Linux Biolinum", Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+    font-family: "Linux Biolinum", Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+}
+
+.clear {
+    clear: both;
 }
 
 .table-title {
@@ -65,4 +69,19 @@ table {
 thead td {
     font-family: "Linux Biolinum", Palatino, sans-serif;
     font-variant: small-caps;
+}
+
+.discord-link {
+    float: right;
+    margin-right: 25%;
+}
+
+.discord-link a {
+    text-decoration: none;
+    text-shadow: none;
+    background: none;
+}
+
+.discord-link img {
+    width: 8em;
 }

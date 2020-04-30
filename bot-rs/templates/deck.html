@@ -1,106 +1,96 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <title>Deck Viewer &mdash; Arena Highlander</title>
-        <meta http-equiv="Content-Type" content="text-html;charset=utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_R.woff2" as="font" type="font/woff2">
-        <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_RI.woff2" as="font" type="font/woff2">
-        <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinLibertine_RBI.woff2" as="font" type="font/woff2">
-        <link rel="preload" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinBiolinum_R.woff2" as="font" type="font/woff2">
-        <link rel="prefetch" crossorigin="anonymous" href="/public/css/fonts/lin-libertine/LinBiolinum_RI.woff2" as="font" type="font/woff2">
-        <link rel="stylesheet" type="text/css" href="/public/css/libertine.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/tufte.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/tufte_ext.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/columns.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/base.css"/>
-        <link rel="stylesheet" type="text/css" href="/public/css/deck.css"/>
-        <script src="http://tappedout.net/tappedout.js"></script>
-    </head>
-    <body>
-        <header>
-            <div class="title">
-                <h2>{{ user.name }}'s Deck &mdash; {{ league.title}} League</h2>
-            </div>
-            <div id="deck-details">
-                <table>
-                    <thead>
-                        <tr>
-                            <td>Player</td>
-                            <td>League</td>
-                            <td>Record</td>
-                            <td title="Opponents' Match Win Percentage">OMW</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ user.name }}</td>
-                            <td>{{ league.title }}</td>
-                            <td style="text-align: right;">{{ meta.match_wins }}&ndash;{{ meta.match_losses}}</td>
-                            <td style="text-align: right;">{{ "{:.1}%"|format(meta.omw) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </header>
-        <div id="deck-display">
-            <div>
-                <h3>Decklist</h3>
-                <div class="deck-sections">
-                    {% for (displaytype, section) in sections %}
-                    <section class="type-section">
-                        <header>{{ displaytype }} ({{ section.count() }})</header>
-                        <ul>
-                            {% for card in section.0 %}
-                            <li><span class="card-count">{{ card.count }}</span><span class="mtgcard">{{ card.name }}</span>
-                                {% if card.cost.is_some() %}
-                                <span class="manacost">
-                                    {% for cost in card.cost.as_ref().unwrap() %}
-                                    <img src="/public/img/mana/mana-{{ cost }}.png" alt="{{ cost }}" />
-                                    {% endfor %}
-                                </span>
-                                {% endif %}
-                            </li>
+{% extends "base.html" %}
+{% block head_title %}Deck Viewer{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/public/css/deck.css" />
+<script src="http://tappedout.net/tappedout.js"></script>
+{% endblock %}
+
+{% block title %}
+{{ user.name }}'s Deck &mdash; {{ league.title}} League
+{% endblock %}
+
+{% block subtitle %}
+<div id="deck-details">
+    <table>
+        <thead>
+            <tr>
+                <td>Player</td>
+                <td>League</td>
+                <td>Record</td>
+                <td title="Opponents' Match Win Percentage">OMW</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ user.name }}</td>
+                <td>{{ league.title }}</td>
+                <td style="text-align: right;">{{ meta.match_wins }}&ndash;{{ meta.match_losses}}</td>
+                <td style="text-align: right;">{{ "{:.1}%"|format(meta.omw) }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block contents %}
+<div id="deck-display">
+    <div>
+        <h3>Decklist</h3>
+        <div class="deck-sections">
+            {% for (displaytype, section) in sections %}
+            <section class="type-section">
+                <header>{{ displaytype }} ({{ section.count() }})</header>
+                <ul>
+                    {% for card in section.0 %}
+                    <li><span class="card-count">{{ card.count }}</span><span class="mtgcard">{{ card.name }}</span>
+                        {% if card.cost.is_some() %}
+                        <span class="manacost">
+                            {% for cost in card.cost.as_ref().unwrap() %}
+                            <img src="/public/img/mana/mana-{{ cost }}.png" alt="{{ cost }}" />
                             {% endfor %}
-                        </ul>
-                    </section>
+                        </span>
+                        {% endif %}
+                    </li>
                     {% endfor %}
-                </div>
-            </div>
-            <div id="deck-matches">
-                <h3 class="table-title">Matches</h3>
-                <table class="match-data">
-                    <thead>
-                        <tr>
-                            <td>Result</td>
-                            <td>Versus</td>
-                            <td>Opponent</td>
-                            <td>Date</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for match_ in matches %}
-                        <tr>
-                            <td>{{ match_.wins() }}&ndash;{{ match_.losses() }}</td>
-                            <td>
-                                {% match match_.opp_deck() %}
-                                    {% when Some with (link) %}
-                                        <a href="{{ link }}">Decklist</a>
-                                    {% when None %}
-                                        <em>Active League Deck</em>
-                                {% endmatch %}
-                            </td>
-                            <td>{{ match_.opponent() }}</td>
-                            <td>{{ match_.date() }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                </ul>
+            </section>
+            {% endfor %}
         </div>
-        <footer>
-            Card images are provided by <a href="https://tappedout.github.io/">TappedOut</a><br/>
-            Mana symbols taken from the Manamoji pack provided by <a href="https://scryfall.com">Scryfall</a>
-        </footer>
-    </body>
-</html>
+    </div>
+    <div id="deck-matches">
+        <h3 class="table-title">Matches</h3>
+        <table class="match-data">
+            <thead>
+                <tr>
+                    <td>Result</td>
+                    <td>Versus</td>
+                    <td>Opponent</td>
+                    <td>Date</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for match_ in matches %}
+                <tr>
+                    <td>{{ match_.wins() }}&ndash;{{ match_.losses() }}</td>
+                    <td>
+                        {% match match_.opp_deck() %}
+                        {% when Some with (link) %}
+                        <a href="{{ link }}">Decklist</a>
+                        {% when None %}
+                        <em>Active League Deck</em>
+                        {% endmatch %}
+                    </td>
+                    <td>{{ match_.opponent() }}</td>
+                    <td>{{ match_.date() }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer>
+    Card images are provided by <a href="https://tappedout.github.io/">TappedOut</a><br />
+    Mana symbols taken from the Manamoji pack provided by <a href="https://scryfall.com">Scryfall</a>
+</footer>
+{% endblock %}

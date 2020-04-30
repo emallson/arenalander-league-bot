@@ -172,3 +172,20 @@ pub fn undo_match(conn: &PgConnection, user: &SerenityUser) -> Result<Option<Mat
         .optional()
         .map_err(|e| e.into())
 }
+
+pub fn list_opponents(conn: &PgConnection, user: &SerenityUser) -> Result<Option<Vec<(String, bool)>>> {
+    use crate::schema::users::dsl::{users, id as uid, name};
+    use crate::schema::decks::dsl::{decks, owner, id as did};
+    let deck = lookup_deck(conn, user)?;
+
+    deck.map(|d| {
+        matches
+            .filter(winning_deck.eq(d.id).or(losing_deck.eq(d.id)))
+            .inner_join(decks.on(did.ne(d.id).and(did.eq(winning_deck).or(did.eq(losing_deck)))))
+            .inner_join(users.on(uid.eq(owner)))
+            .select((name, confirmed))
+            .get_results(conn)
+    })
+    .transpose()
+    .map_err(|e| e.into())
+}

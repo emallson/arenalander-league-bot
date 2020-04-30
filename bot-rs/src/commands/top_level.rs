@@ -8,9 +8,8 @@ use serenity::prelude::*;
 use crate::{ACTIVE_CHECK, DbConn, actions, PendingRegistrationSet, BASE_URL, PendingResignationSet};
 
 #[group]
-#[commands(register, league, resign)]
+#[commands(register, league, resign, opponents)]
 pub(crate) struct League;
-
 
 #[command]
 #[description("Register a deck for the league. You have until the end of the current league to complete 5 matches. LeagueBot will DM you with registration instructions.")]
@@ -97,6 +96,35 @@ fn resign(ctx: &mut Context, msg: &Message) -> CommandResult {
     } else {
         resignations.insert(msg.author.id, Utc::now());
         msg.channel_id.say(&ctx.http, "Are you sure you want to resign? Your record will remain as-is and your decklist will become public. If you would like to resign, use the !resign command again.")?;
+    }
+    Ok(())
+}
+
+#[command]
+#[checks(Active)]
+#[description("List the opponents you have already played during this league run.")]
+fn opponents(ctx: &mut Context, msg: &Message) -> CommandResult {
+    let data = ctx.data.read();
+    let conn = data.get::<DbConn>().unwrap().lock().unwrap();
+
+    match actions::matches::list_opponents(&*conn, &msg.author) {
+        Ok(Some(opps)) => {
+            msg.author.dm(&ctx.http, |m| {
+                m.embed(|e| {
+                    let desc = opps.into_iter().map(|(opp, confirmed)| format!("{}\t{}", opp, if confirmed { "Confirmed" } else { "Unconfirmed" })).collect::<Vec<_>>().join("\n");
+                    e.title("Opponents in Current League")
+                    .description(desc)
+                });
+                m
+            })?;
+        },
+        Ok(None) => {
+            msg.author.dm(&ctx.http, |m| m.content("You have not played any matches in the current league."))?;
+        },
+        Err(err) => {
+            error!("Error processing !opponents: {:?}", err);
+            msg.channel_id.say(&ctx.http, "Unable to retrieve opponent list.")?;
+        }
     }
     Ok(())
 }

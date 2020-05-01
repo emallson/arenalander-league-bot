@@ -175,6 +175,29 @@ fn build_discord_client() -> std::thread::JoinHandle<Result<()>> {
                         );
                     }
                 })
+                .on_dispatch_error(|ctx, msg, err| {
+                    use serenity::framework::standard::DispatchError::*;
+                    match err {
+                        CheckFailed("Active", reason) => {
+                            debug!("active check failed: {:?}", reason);
+                            msg.channel_id.say(&ctx.http, "Only active league participants can use this command.")
+                                .expect("Unable to respond to failed command");
+                        }
+                        _ => {
+                            error!("Dispatch error: {:?}, author: {}", err, msg.author.name);
+                        }
+                    }
+                })
+                .unrecognised_command(|ctx, msg, cmd_name| {
+                    match msg.channel_id.say(&ctx.http, format!("No command '{}'", cmd_name)) {
+                        Ok(_) => {
+                            debug!("Unknown command: {}", cmd_name);
+                        },
+                        Err(e) => {
+                            error!("Error while responding to unknown command '{}': {}", cmd_name, e);
+                        }
+                    }
+                })
                 .group(&commands::top_level::LEAGUE_GROUP)
                 .group(&commands::admin::LEAGUECONTROL_GROUP)
                 .group(&commands::matches::LEAGUEMATCHGROUP_GROUP)

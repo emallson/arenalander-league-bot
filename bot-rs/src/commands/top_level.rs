@@ -78,6 +78,16 @@ fn league(ctx: &mut Context, msg: &Message) -> CommandResult {
 )]
 fn resign(ctx: &mut Context, msg: &Message) -> CommandResult {
     let mut data = ctx.data.write();
+    {
+        let conn = data.get::<DbConn>().unwrap().lock().unwrap();
+        let unc_match = actions::matches::unconfirmed_match(&*conn, &msg.author)?;
+
+        if unc_match.is_some() {
+            msg.channel_id.say(&ctx.http, "You cannot resign with match confirmation pending. Resolve the pending match, then try again.")?;
+            return Ok(());
+        }
+    }
+    
     let resignations = data.get_mut::<PendingResignationSet>().unwrap();
 
     if resignations.contains_key(&msg.author.id)

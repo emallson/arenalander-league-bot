@@ -20,6 +20,20 @@ pub enum MatchError {
     MatchPending,
 }
 
+pub fn unconfirmed_match(conn: &PgConnection, user: &SerenityUser) -> Result<Option<()>> {
+    let deck = lookup_deck(conn, user)?;
+
+    if let Some(d) = deck {
+        let unc_match: Option<Match> = matches
+            .filter(confirmed.eq(false).and(winning_deck.eq(d.id).or(losing_deck.eq(d.id))))
+            .get_result(conn)
+            .optional()?;
+        Ok(unc_match.map(|_| ()))
+    } else {
+        Ok(None)
+    }
+}
+
 pub fn report_match(
     conn: &PgConnection,
     winner: &SerenityUser,

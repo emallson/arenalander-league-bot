@@ -151,30 +151,39 @@ fn get_deck(
     }
 
     // at this point, we know we have access to the deck
-    let contents: Vec<(i32, String, f64, Option<String>, String, Uuid)> = {
+    let contents: Vec<(i32, i32, String, f64, Option<String>, String, Uuid)> = {
         use crate::schema::cards::dsl::*;
         use crate::schema::deck_contents::dsl::*;
+        use crate::schema::deck_contents::dsl::id as dcid;
+
         deck_contents
             .filter(deck.eq(deck_id))
             .inner_join(cards.on(scryfalloracleid.eq(card)))
-            .select((count, name, convertedmanacost, manacost, types, scryfalloracleid))
-            .distinct()
+            .select((dcid, count, name, convertedmanacost, manacost, types, scryfalloracleid))
+            .distinct_on(dcid)
             .get_results(conn)?
     };
 
     let mut cards = contents
         .into_iter()
-        .map(|(count, name, cmc, cost, types, oracleid)| {
+        .fold(BTreeMap::new(), |mut map, (_, count, name, cmc, cost, types, oracleid)| {
+            let entry = map.entry(oracleid).or_insert_with(|| DisplayCard {
+                count: 0,
+                name, cmc, cost: cost.map(|c| parse_mana(&c).unwrap()),
+                types,
+                uuid: oracleid
+            });
+
+            entry.count += count as usize;
+            println!("{:?}", entry);
+
+            map
+        })
+        .into_iter()
+        .map(|(_, card)| {
             (
-                display_type(&types).unwrap(),
-                DisplayCard {
-                    count: count as usize,
-                    name,
-                    cmc,
-                    cost: cost.map(|c| parse_mana(&c).unwrap()),
-                    types,
-                    uuid: oracleid
-                },
+                display_type(&card.types).unwrap(),
+                card
             )
         })
         .fold(BTreeMap::new(), |mut map, (displaytype, card)| {

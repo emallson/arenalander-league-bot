@@ -38,7 +38,7 @@ default)
 The base docker images should set up *almost* everything. After successfully building, you will need to run:
 
 ```bash
-docker-compose up db -d                                        # start the DB first so postgres has time to start
+docker-compose up -d db                                        # start the DB first so postgres has time to start
 docker-compose run botrs diesel database setup --locked-schema # setup the DB
 ```
 

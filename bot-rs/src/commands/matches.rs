@@ -1,10 +1,11 @@
 use serenity::framework::standard::{
     macros::{command, group},
-    Args, CommandResult,
+    Args, CommandResult, ArgError
 };
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
+use serenity::Result;
 
 use crate::{ACTIVE_CHECK, DbConn, actions, deck_url, logged_dm};
 
@@ -16,13 +17,21 @@ use crate::{ACTIVE_CHECK, DbConn, actions, deck_url, logged_dm};
 #[commands(report, undo, confirm, dispute)]
 pub(crate) struct LeagueMatchGroup;
 
+fn respond_parse_error<E: std::fmt::Display>(ctx: &mut Context, msg: &Message, err: ArgError<E>) -> Result<Message> {
+    msg.channel_id.say(&ctx.http, match err {
+        ArgError::Eos => "Not enough arguments for that command. If you're not sure how to use it, try `!help`.".to_owned(),
+        ArgError::Parse(err) => format!("Unable to parse command argument: {}", err),
+        _ => "Unable to parse command argument: unknown parse error occurred".to_owned(),
+    })
+}
+
 #[command]
 #[only_in(guilds)]
 #[aliases("results")]
 #[description("Report match results")]
 #[usage("@opponent <your wins> <opponent wins>")]
 #[example("@emallson 2 0")]
-#[num_args(3)]
+#[min_args(3)]
 fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     if msg.mentions.is_empty() {
         msg.channel_id.say(
@@ -43,9 +52,32 @@ fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let _ = args.single::<String>().unwrap();
-    let wins = args.single::<u32>().unwrap();
-    let losses = args.single::<u32>().unwrap();
+    if let Err(err) = args.trimmed().single::<String>() {
+        respond_parse_error(ctx, msg, err)?;   
+        return Ok(());
+    };
+
+    // discord inserts a space after mentions. people frequently add another one after. serenity
+    // handles that...poorly. hacky workaround
+    if let Some("") = args.current() {
+        args.advance();
+    }
+
+    let wins = match args.single::<u32>() {
+        Ok(w) => w,
+        Err(e) => {
+            respond_parse_error(ctx, msg, e)?;
+            return Ok(());
+        }
+    };
+
+    let losses = match args.single::<u32>() {
+        Ok(l) => l,
+        Err(e) => {
+            respond_parse_error(ctx, msg, e)?;
+            return Ok(());
+        }
+    };
 
     // confirmation logic depends on winner reporting
     if wins < losses {

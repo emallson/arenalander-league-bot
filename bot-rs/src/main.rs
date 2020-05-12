@@ -183,6 +183,14 @@ fn build_discord_client() -> std::thread::JoinHandle<Result<()>> {
                             msg.channel_id.say(&ctx.http, "Only active league participants can use this command.")
                                 .expect("Unable to respond to failed command");
                         }
+                        NotEnoughArguments { min, given } => {
+                            msg.channel_id.say(&ctx.http, format!("Too few arguments for command (expected: {}, actual: {})", min, given))
+                                .expect("Unable to respond to command with too few arguments");
+                        }
+                        TooManyArguments { max, given } => {
+                            msg.channel_id.say(&ctx.http, format!("Too many arguments for command (expected: {}, actual: {})", max, given))
+                                .expect("Unable to respond to command with too few arguments");
+                        }
                         _ => {
                             error!("Dispatch error: {:?}, author: {}", err, msg.author.name);
                         }

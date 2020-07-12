@@ -29,10 +29,11 @@ code = args['<set-code>']
 
 data = requests.get(f'https://mtgjson.com/api/v5/{code}.json').json()
 
+
 def card_to_row(card):
     row = {col: card.get(col, None) for col, obj in cards.c.items()}
     del row['id']
-    
+
     try:
         row['isarena'] = 'arena' in card['availability']
         row['scryfallid'] = card['identifiers']['scryfallId']
@@ -46,9 +47,10 @@ def card_to_row(card):
         print(card)
         raise e
 
+
 with engine.begin() as conn:
     new_cards = [card_to_row(card) for card in data['data']['cards']]
     query = insert(cards).on_conflict_do_nothing()
     # print(query)
     res = conn.execute(query, new_cards)
-    print(f'{len(new_cards)} cards inserted')
+    print(f'{res.rowcount} new cards inserted ({len(new_cards) in set})')

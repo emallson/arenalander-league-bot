@@ -33,11 +33,18 @@ def card_to_row(card):
     row = {col: card.get(col, None) for col, obj in cards.c.items()}
     del row['id']
     
-    row['isarena'] = 'arena' in card['availability']
-    row['scryfallid'] = card['identifiers']['scryfallId']
-    row['scryfalloracleid'] = card['identifiers']['scryfallOracleId']
-    row['setcode'] = code
-    return row
+    try:
+        row['isarena'] = 'arena' in card['availability']
+        row['scryfallid'] = card['identifiers']['scryfallId']
+        row['scryfalloracleid'] = card['identifiers']['scryfallOracleId']
+        row['setcode'] = code
+        row['convertedmanacost'] = card['convertedManaCost']
+        row['manacost'] = card.get('manaCost', None)
+        row['types'] = ','.join(card['types'])
+        return row
+    except Exception as e:
+        print(card)
+        raise e
 
 with engine.begin() as conn:
     new_cards = [card_to_row(card) for card in data['data']['cards']]

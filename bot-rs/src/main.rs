@@ -31,7 +31,7 @@ mod models;
 mod schema;
 mod web;
 
-const BASE_URL: &str = "http://arenalander.emallson.net";
+const BASE_URL: &str = "http://gladiator.emallson.net";
 
 struct Handler;
 impl EventHandler for Handler {

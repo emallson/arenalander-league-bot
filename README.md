@@ -1,4 +1,4 @@
-Discord bot for [Arena Highlander][discord] to run
+Discord bot for [Gladiator][discord] to run
 leagues and display results.
 
 ## Setting Up
@@ -71,7 +71,7 @@ docker-compose run botrs cargo test # alternative to cargo test if you didn't in
 
 ## Deploying
 
-Contact `emallson` via the [Arena Highlander Discord][discord] if you are
+Contact `emallson` via the [Gladiator Discord][discord] if you are
 interested in deploying your own league bot.
 
-[discord]: https://discord.gg/h2nEQHg
+[discord]: https://discord.gg/ncpJVm5

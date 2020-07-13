@@ -9,6 +9,7 @@ use std::env;
 
 mod standings;
 mod deck;
+mod graphql;
 
 type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -38,6 +39,7 @@ pub async fn build_web_server() -> Result<()> {
             .service(index)
             .service(standings::service())
             .service(deck::service())
+            .service(graphql::service())
     })
     .bind(format!("0.0.0.0:{}", port))?
     .run()

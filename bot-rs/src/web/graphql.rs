@@ -222,6 +222,13 @@ impl Query {
         find_card(&conn, name_.eq(name))
     }
 
+    fn leagues(ctx: &Context) -> Vec<League> {
+        use crate::schema::leagues::dsl::leagues;
+        let conn = ctx.pool.get().unwrap();
+
+        leagues.get_results(&conn).unwrap()
+    }
+
     fn league(ctx: &Context, id: i32) -> Option<League> {
         use crate::schema::leagues::dsl::{leagues, id as id_};
         let conn = ctx.pool.get().unwrap();

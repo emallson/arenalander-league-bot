@@ -36,7 +36,7 @@ pub struct RawDeckEntry {
 }
 
 const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
-const BANNED_CARDS: [&str; 1] = [
+const BANNED_CARDS: [&str; 2] = [
     "60c60923-ff1b-43f7-8768-731499fcffc9",
     "aa959340-c869-4caa-92c7-572bd8d23eef",
 ];

@@ -1,18 +1,16 @@
-use crate::mana_parser::parse_mana;
-use crate::models::{Deck, League, User, Match, DeckRecord};
+use super::DbPool;
 use crate::deck_url;
-use actix_web::{
-    get, web, HttpRequest, HttpResponse, Responder, Result as WebResult, Scope
-};
+use crate::mana_parser::parse_mana;
+use crate::models::{Deck, DeckRecord, League, Match, User};
+use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Result as WebResult, Scope};
 use anyhow::Result;
 use askama::Template;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use qstring::QString;
 use std::cmp::Ordering;
-use std::collections::{BTreeSet, BTreeMap};
+use std::collections::{BTreeMap, BTreeSet};
 use uuid::Uuid;
-use super::DbPool;
 
 #[derive(Hash, Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum DisplayType {
@@ -79,29 +77,40 @@ impl Ord for DisplayCard {
 fn get_record(conn: &PgConnection, deck_id: i32) -> Result<DeckRecord> {
     use crate::schema::deck_records::dsl::*;
 
-    deck_records.filter(id.eq(deck_id)).get_result(conn)
+    deck_records
+        .filter(id.eq(deck_id))
+        .get_result(conn)
         .map_err(|e| e.into())
 }
 
 fn get_matches(conn: &PgConnection, deck_id: i32) -> Result<Vec<DisplayMatch>> {
-    use crate::schema::matches::dsl::*;
-    use crate::schema::users::dsl::{users, id as uid};
     use crate::schema::decks::dsl::{decks, id, owner};
+    use crate::schema::matches::dsl::*;
+    use crate::schema::users::dsl::{id as uid, users};
 
     let confirmed_matches: Vec<(Match, Deck, User)> = matches
-        .filter(confirmed.eq(true).and(winning_deck.eq(deck_id).or(losing_deck.eq(deck_id))))
-        .inner_join(decks.on(id.ne(deck_id).and(id.eq(winning_deck).or(id.eq(losing_deck)))))
+        .filter(
+            confirmed
+                .eq(true)
+                .and(winning_deck.eq(deck_id).or(losing_deck.eq(deck_id))),
+        )
+        .inner_join(
+            decks.on(id
+                .ne(deck_id)
+                .and(id.eq(winning_deck).or(id.eq(losing_deck)))),
+        )
         .inner_join(users.on(uid.eq(owner)))
         .get_results(conn)?;
 
-    Ok(confirmed_matches.into_iter().map(|(match_, opp_deck, opponent)| {
-        DisplayMatch {
+    Ok(confirmed_matches
+        .into_iter()
+        .map(|(match_, opp_deck, opponent)| DisplayMatch {
             match_,
-            opp_deck, 
+            opp_deck,
             opponent,
-            deck_id
-        }
-    }).collect())
+            deck_id,
+        })
+        .collect())
 }
 
 fn get_mw(conn: &PgConnection, deck_ids: Vec<i32>) -> Result<f64> {
@@ -111,9 +120,13 @@ fn get_mw(conn: &PgConnection, deck_ids: Vec<i32>) -> Result<f64> {
         .select((match_wins, match_losses))
         .filter(id.eq_any(deck_ids))
         .get_results(conn)?;
-    
+
     let num_opp = wl.len();
-    Ok(wl.into_iter().map(|(w, l)| w as f64 / (w + l) as f64).sum::<f64>() / num_opp as f64)
+    Ok(wl
+        .into_iter()
+        .map(|(w, l)| w as f64 / (w + l) as f64)
+        .sum::<f64>()
+        / num_opp as f64)
 }
 
 fn get_deck(
@@ -153,41 +166,51 @@ fn get_deck(
     // at this point, we know we have access to the deck
     let contents: Vec<(i32, i32, String, f64, Option<String>, String, Uuid)> = {
         use crate::schema::cards::dsl::*;
-        use crate::schema::deck_contents::dsl::*;
         use crate::schema::deck_contents::dsl::id as dcid;
+        use crate::schema::deck_contents::dsl::*;
 
         deck_contents
             .filter(deck.eq(deck_id))
             .inner_join(cards.on(scryfalloracleid.eq(card)))
-            .select((dcid, count, name, convertedmanacost, manacost, types, scryfalloracleid))
+            .select((
+                dcid,
+                count,
+                name,
+                convertedmanacost,
+                manacost,
+                types,
+                scryfalloracleid,
+            ))
             .distinct_on(dcid)
             .get_results(conn)?
     };
 
     let mut cards = contents
         .into_iter()
-        .fold(BTreeMap::new(), |mut map, (_, count, name, cmc, cost, types, oracleid)| {
-            let entry = map.entry(oracleid).or_insert_with(|| DisplayCard {
-                count: 0,
-                name, cmc, cost: cost.map(|c| parse_mana(&c).unwrap()),
-                types,
-                uuid: oracleid
-            });
+        .fold(
+            BTreeMap::new(),
+            |mut map, (_, count, name, cmc, cost, types, oracleid)| {
+                let entry = map.entry(oracleid).or_insert_with(|| DisplayCard {
+                    count: 0,
+                    name,
+                    cmc,
+                    cost: cost.map(|c| parse_mana(&c).unwrap()),
+                    types,
+                    uuid: oracleid,
+                });
 
-            entry.count += count as usize;
-            println!("{:?}", entry);
+                entry.count += count as usize;
+                println!("{:?}", entry);
 
-            map
-        })
+                map
+            },
+        )
         .into_iter()
-        .map(|(_, card)| {
-            (
-                display_type(&card.types).unwrap(),
-                card
-            )
-        })
+        .map(|(_, card)| (display_type(&card.types).unwrap(), card))
         .fold(BTreeMap::new(), |mut map, (displaytype, card)| {
-            let entry = map.entry(displaytype).or_insert_with(|| CardSection(Vec::new()));
+            let entry = map
+                .entry(displaytype)
+                .or_insert_with(|| CardSection(Vec::new()));
             entry.push(card);
             map
         });
@@ -217,7 +240,7 @@ fn get_deck(
     let meta = MetaInfo {
         match_wins: record.match_wins,
         match_losses: record.match_losses,
-        omw: 100.0 * get_mw(conn, matches.iter().map(|m| m.opponent_deck_id()).collect())?
+        omw: 100.0 * get_mw(conn, matches.iter().map(|m| m.opponent_deck_id()).collect())?,
     };
 
     Ok(Some(DeckTemplate {
@@ -292,7 +315,11 @@ impl DisplayMatch {
     }
 
     fn opponent_deck_id(&self) -> i32 {
-        if self.is_winner() { self.match_.losing_deck } else { self.match_.winning_deck }
+        if self.is_winner() {
+            self.match_.losing_deck
+        } else {
+            self.match_.winning_deck
+        }
     }
 
     pub fn opp_deck(&self) -> Option<String> {
@@ -349,6 +376,5 @@ async fn deck(
 }
 
 pub fn service() -> Scope {
-    web::scope("/deck")
-        .service(deck)
+    web::scope("/deck").service(deck)
 }

@@ -1,13 +1,13 @@
 use serenity::framework::standard::{
     macros::{command, group},
-    Args, CommandResult, ArgError
+    ArgError, Args, CommandResult,
 };
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 use serenity::Result;
 
-use crate::{ACTIVE_CHECK, DbConn, actions, deck_url, logged_dm};
+use crate::{actions, deck_url, logged_dm, DbConn, ACTIVE_CHECK};
 
 #[group]
 #[prefix("match")]
@@ -17,7 +17,11 @@ use crate::{ACTIVE_CHECK, DbConn, actions, deck_url, logged_dm};
 #[commands(report, undo, confirm, dispute)]
 pub(crate) struct LeagueMatchGroup;
 
-fn respond_parse_error<E: std::fmt::Display>(ctx: &mut Context, msg: &Message, err: ArgError<E>) -> Result<Message> {
+fn respond_parse_error<E: std::fmt::Display>(
+    ctx: &mut Context,
+    msg: &Message,
+    err: ArgError<E>,
+) -> Result<Message> {
     msg.channel_id.say(&ctx.http, match err {
         ArgError::Eos => "Not enough arguments for that command. If you're not sure how to use it, try `!help`.".to_owned(),
         ArgError::Parse(err) => format!("Unable to parse command argument: {}", err),
@@ -53,7 +57,7 @@ fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     if let Err(err) = args.trimmed().single::<String>() {
-        respond_parse_error(ctx, msg, err)?;   
+        respond_parse_error(ctx, msg, err)?;
         return Ok(());
     };
 

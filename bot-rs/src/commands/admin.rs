@@ -1,4 +1,4 @@
-use chrono::{Utc};
+use chrono::Utc;
 use chrono_english::{parse_date_string, Dialect};
 use serenity::framework::standard::{
     macros::{command, group},
@@ -7,8 +7,8 @@ use serenity::framework::standard::{
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 
-use crate::DbConn;
 use crate::actions;
+use crate::DbConn;
 
 #[group]
 #[prefix("admin")]
@@ -85,7 +85,6 @@ fn delete_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandRes
     Ok(())
 }
 
-
 #[command]
 #[only_in(guilds)]
 #[description("Set all league decks to inactive. Should ONLY be used on leagues that have ended.")]
@@ -98,7 +97,10 @@ fn finalize_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandR
 
     let count = actions::league::finalize_league(&*conn.lock().unwrap(), id)
         .expect("Unable to finalize league");
-    let message = format!("Finalized league {}, marking {} decks as inactive.", id, count);
+    let message = format!(
+        "Finalized league {}, marking {} decks as inactive.",
+        id, count
+    );
     msg.channel_id.say(&ctx.http, &message)?;
 
     Ok(())

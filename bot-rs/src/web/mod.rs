@@ -1,15 +1,13 @@
 use actix_files as fs;
-use actix_web::{
-    get, App, HttpResponse, HttpServer, Responder, middleware,
-};
+use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
 use anyhow::Result;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::PgConnection;
 use std::env;
 
-mod standings;
 mod deck;
 mod graphql;
+mod standings;
 
 type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 

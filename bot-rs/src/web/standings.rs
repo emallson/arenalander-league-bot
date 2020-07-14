@@ -1,18 +1,20 @@
-use crate::models::{Deck, DeckRecord, User, League};
+use super::DbPool;
 use crate::actions::league::current_league;
-use actix_web::{
-    get, web, HttpResponse, Responder, Result as WebResult, Scope,
-};
+use crate::models::{Deck, DeckRecord, League, User};
+use actix_web::{get, web, HttpResponse, Responder, Result as WebResult, Scope};
 use anyhow::Result;
 use askama::Template;
 use diesel::prelude::*;
 use diesel::PgConnection;
-use super::DbPool;
 
 fn get_league(conn: &PgConnection, league_id: Option<i32>) -> Result<Option<League>> {
     if let Some(league_id) = league_id {
         use crate::schema::leagues::dsl::*;
-        leagues.filter(id.eq(league_id)).get_result(conn).optional().map_err(|e| e.into())
+        leagues
+            .filter(id.eq(league_id))
+            .get_result(conn)
+            .optional()
+            .map_err(|e| e.into())
     } else {
         current_league(conn).map_err(|e| e.into())
     }
@@ -38,8 +40,11 @@ fn get_user_standings(conn: &PgConnection, league_id: Option<i32>) -> Result<Vec
         .select((name, wins, complete_runs))
         .filter(league.eq(lid))
         .get_results(conn)?;
-    
-    let mut results = results.into_iter().map(|(u, w, runs)| (u, (w + runs) as usize)).collect::<Vec<_>>();
+
+    let mut results = results
+        .into_iter()
+        .map(|(u, w, runs)| (u, (w + runs) as usize))
+        .collect::<Vec<_>>();
     results.sort_by_key(|&(_, points)| std::cmp::Reverse(points));
 
     Ok(results)
@@ -86,7 +91,7 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
             error!("Unable to retrieve standings: {:?}", e);
             HttpResponse::InternalServerError().finish()
         })?;
-    
+
     let leaders = leaders_p.await.map_err(|e| {
         error!("Unable to retrieve standings: {:?}", e);
         HttpResponse::InternalServerError().finish()
@@ -98,7 +103,10 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
 }
 
 #[get("/{id}")]
-async fn standings_for(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> WebResult<impl Responder> {
+async fn standings_for(
+    pool: web::Data<DbPool>,
+    path: web::Path<(i32,)>,
+) -> WebResult<impl Responder> {
     let conn = pool.get().expect("Unable to get DB connection");
     let lid = path.0;
     let leaders_p = web::block(move || get_user_standings(&conn, Some(lid)));
@@ -110,7 +118,7 @@ async fn standings_for(pool: web::Data<DbPool>, path: web::Path<(i32,)>) -> WebR
             error!("Unable to retrieve standings: {:?}", e);
             HttpResponse::InternalServerError().finish()
         })?;
-    
+
     let leaders = leaders_p.await.map_err(|e| {
         error!("Unable to retrieve standings: {:?}", e);
         HttpResponse::InternalServerError().finish()

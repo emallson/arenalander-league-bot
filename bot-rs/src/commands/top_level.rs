@@ -1,7 +1,6 @@
 use crate::{
     actions, DbConn, PendingRegistrationSet, PendingResignationSet, ACTIVE_CHECK, BASE_URL,
 };
-use std::collections::HashMap;
 use chrono::{Duration, Utc};
 use serenity::framework::standard::{
     macros::{command, group},
@@ -9,6 +8,7 @@ use serenity::framework::standard::{
 };
 use serenity::model::channel::Message;
 use serenity::prelude::*;
+use std::collections::HashMap;
 
 #[group]
 #[commands(register, league, resign, opponents)]
@@ -87,7 +87,7 @@ fn resign(ctx: &mut Context, msg: &Message) -> CommandResult {
             return Ok(());
         }
     }
-    
+
     let resignations = data.get_mut::<PendingResignationSet>().unwrap();
 
     if resignations.contains_key(&msg.author.id)
@@ -123,7 +123,10 @@ fn opponents(ctx: &mut Context, msg: &Message) -> CommandResult {
     match actions::matches::list_opponents(&*conn, &msg.author) {
         Ok(Some(opps)) => {
             if opps.is_empty() {
-                msg.channel_id.say(&ctx.http, "You have not played any matches in the current league.")?;
+                msg.channel_id.say(
+                    &ctx.http,
+                    "You have not played any matches in the current league.",
+                )?;
             } else {
                 msg.channel_id.send_message(&ctx.http, |m| {
                     m.embed(|e| {
@@ -173,7 +176,10 @@ fn opponents(ctx: &mut Context, msg: &Message) -> CommandResult {
             }
         }
         Ok(None) => {
-            msg.channel_id.say(&ctx.http, "You have not played any matches in the current league.")?;
+            msg.channel_id.say(
+                &ctx.http,
+                "You have not played any matches in the current league.",
+            )?;
         }
         Err(err) => {
             error!("Error processing !opponents: {:?}", err);

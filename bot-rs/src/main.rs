@@ -88,7 +88,6 @@ impl EventHandler for Handler {
     }
 }
 
-
 fn logged_dm(ctx: &Context, user: &User, message: &str) {
     match user.dm(ctx, |m| m.content(message)) {
         Ok(_) => {}
@@ -116,7 +115,7 @@ impl TypeMapKey for PendingResignationSet {
 fn deck_url(id: i32, token: Option<uuid::Uuid>) -> String {
     match token {
         Some(tok) => format!("{}/deck/{}?token={}", BASE_URL, id, tok),
-        None => format!("{}/deck/{}", BASE_URL, id)
+        None => format!("{}/deck/{}", BASE_URL, id),
     }
 }
 
@@ -180,15 +179,33 @@ fn build_discord_client() -> std::thread::JoinHandle<Result<()>> {
                     match err {
                         CheckFailed("Active", reason) => {
                             debug!("active check failed: {:?}", reason);
-                            msg.channel_id.say(&ctx.http, "Only active league participants can use this command.")
+                            msg.channel_id
+                                .say(
+                                    &ctx.http,
+                                    "Only active league participants can use this command.",
+                                )
                                 .expect("Unable to respond to failed command");
                         }
                         NotEnoughArguments { min, given } => {
-                            msg.channel_id.say(&ctx.http, format!("Too few arguments for command (expected: {}, actual: {})", min, given))
+                            msg.channel_id
+                                .say(
+                                    &ctx.http,
+                                    format!(
+                                        "Too few arguments for command (expected: {}, actual: {})",
+                                        min, given
+                                    ),
+                                )
                                 .expect("Unable to respond to command with too few arguments");
                         }
                         TooManyArguments { max, given } => {
-                            msg.channel_id.say(&ctx.http, format!("Too many arguments for command (expected: {}, actual: {})", max, given))
+                            msg.channel_id
+                                .say(
+                                    &ctx.http,
+                                    format!(
+                                        "Too many arguments for command (expected: {}, actual: {})",
+                                        max, given
+                                    ),
+                                )
                                 .expect("Unable to respond to command with too few arguments");
                         }
                         _ => {
@@ -197,12 +214,18 @@ fn build_discord_client() -> std::thread::JoinHandle<Result<()>> {
                     }
                 })
                 .unrecognised_command(|ctx, msg, cmd_name| {
-                    match msg.channel_id.say(&ctx.http, format!("No command '{}'", cmd_name)) {
+                    match msg
+                        .channel_id
+                        .say(&ctx.http, format!("No command '{}'", cmd_name))
+                    {
                         Ok(_) => {
                             debug!("Unknown command: {}", cmd_name);
-                        },
+                        }
                         Err(e) => {
-                            error!("Error while responding to unknown command '{}': {}", cmd_name, e);
+                            error!(
+                                "Error while responding to unknown command '{}': {}",
+                                cmd_name, e
+                            );
                         }
                     }
                 })
@@ -225,15 +248,15 @@ fn setup_sentry(
     logger: Box<dyn log::Log>,
 ) -> Result<Option<sentry::internals::ClientInitGuard>> {
     if let Ok(token) = env::var("SENTRY_TOKEN") {
-            let guard = sentry::init(token);
-            sentry::integrations::panic::register_panic_handler();
-            let log_options = sentry::integrations::log::LoggerOptions {
-                global_filter: Some(filter),
-                ..Default::default()
-            };
-            sentry::integrations::log::init(Some(logger), log_options);
+        let guard = sentry::init(token);
+        sentry::integrations::panic::register_panic_handler();
+        let log_options = sentry::integrations::log::LoggerOptions {
+            global_filter: Some(filter),
+            ..Default::default()
+        };
+        sentry::integrations::log::init(Some(logger), log_options);
 
-            Ok(Some(guard))
+        Ok(Some(guard))
     } else {
         log::set_boxed_logger(logger)?;
         log::set_max_level(filter);

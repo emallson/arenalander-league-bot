@@ -47,7 +47,7 @@ pub fn check_active(conn: &PgConnection, discord_user: &SerenityUser) -> Result<
 }
 
 pub fn finalize_league(conn: &PgConnection, league_id: i32) -> Result<usize> {
-    use crate::schema::decks::dsl::{decks, league, active};
+    use crate::schema::decks::dsl::{active, decks, league};
 
     update(decks)
         .filter(league.eq(league_id))

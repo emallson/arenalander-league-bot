@@ -25,7 +25,11 @@ pub fn unconfirmed_match(conn: &PgConnection, user: &SerenityUser) -> Result<Opt
 
     if let Some(d) = deck {
         let unc_match: Option<Match> = matches
-            .filter(confirmed.eq(false).and(winning_deck.eq(d.id).or(losing_deck.eq(d.id))))
+            .filter(
+                confirmed
+                    .eq(false)
+                    .and(winning_deck.eq(d.id).or(losing_deck.eq(d.id))),
+            )
             .get_result(conn)
             .optional()?;
         Ok(unc_match.map(|_| ()))
@@ -196,7 +200,7 @@ pub struct Opponent {
 
 pub fn list_opponents(conn: &PgConnection, user: &SerenityUser) -> Result<Option<Vec<Opponent>>> {
     use crate::schema::decks::dsl::{active, decks, id as did, owner};
-    use crate::schema::users::dsl::{id as uid, name, users, discordid};
+    use crate::schema::users::dsl::{discordid, id as uid, name, users};
     let deck = lookup_deck(conn, user)?;
 
     deck.map(|d| {
@@ -213,14 +217,17 @@ pub fn list_opponents(conn: &PgConnection, user: &SerenityUser) -> Result<Option
     })
     .transpose()
     .map(|res| {
-        res.map(|vec| {vec.into_iter()
-            .map(|(disid, user_name, conf, act): (i64, String, bool, bool)| Opponent {
-                discordid: disid,
-                name: user_name,
-                confirmed: conf,
-                active: act,
-            })
-            .collect()
+        res.map(|vec| {
+            vec.into_iter()
+                .map(
+                    |(disid, user_name, conf, act): (i64, String, bool, bool)| Opponent {
+                        discordid: disid,
+                        name: user_name,
+                        confirmed: conf,
+                        active: act,
+                    },
+                )
+                .collect()
         })
     })
     .map_err(|e| e.into())

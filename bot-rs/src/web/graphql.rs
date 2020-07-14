@@ -1,15 +1,15 @@
-use std::sync::Arc;
-use actix_web::{web, Scope, HttpResponse, Result as WebResult, Error as WebError};
 use super::DbPool;
-use juniper::http::graphiql::graphiql_source;
-use juniper::http::GraphQLRequest;
-use uuid::Uuid;
-use crate::models::{Deck, League, DeckContents, DeckRecord, Match};
+use crate::models::{Deck, DeckContents, DeckRecord, League, Match};
+use actix_web::{web, Error as WebError, HttpResponse, Result as WebResult, Scope};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
+use juniper::http::graphiql::graphiql_source;
+use juniper::http::GraphQLRequest;
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct Context {
-    pool: DbPool
+    pool: DbPool,
 }
 
 impl juniper::Context for Context {}
@@ -96,7 +96,10 @@ impl Deck {
         use crate::schema::deck_contents::dsl::*;
         let conn = ctx.pool.get().unwrap();
 
-        deck_contents.filter(deck.eq(self.id)).get_results(&conn).unwrap()
+        deck_contents
+            .filter(deck.eq(self.id))
+            .get_results(&conn)
+            .unwrap()
     }
 
     fn record(&self, ctx: &Context) -> DeckRecord {
@@ -110,7 +113,14 @@ impl Deck {
         use crate::schema::matches::dsl::*;
         let conn = ctx.pool.get().unwrap();
 
-        matches.filter(confirmed.eq(true).and(winning_deck.eq(self.id).or(losing_deck.eq(self.id)))).get_results(&conn).unwrap()
+        matches
+            .filter(
+                confirmed
+                    .eq(true)
+                    .and(winning_deck.eq(self.id).or(losing_deck.eq(self.id))),
+            )
+            .get_results(&conn)
+            .unwrap()
     }
 }
 
@@ -188,7 +198,12 @@ impl League {
 
 type PgConn = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<PgConnection>>;
 fn find_card<E>(conn: &PgConn, expr: E) -> Option<Card>
-where E: diesel::Expression<SqlType=diesel::sql_types::Bool> + diesel::expression::NonAggregate + diesel::expression::AppearsOnTable<crate::schema::cards::table> + diesel::query_builder::QueryId + diesel::query_builder::QueryFragment<diesel::pg::Pg>,
+where
+    E: diesel::Expression<SqlType = diesel::sql_types::Bool>
+        + diesel::expression::NonAggregate
+        + diesel::expression::AppearsOnTable<crate::schema::cards::table>
+        + diesel::query_builder::QueryId
+        + diesel::query_builder::QueryFragment<diesel::pg::Pg>,
 {
     let result = {
         use crate::schema::cards::dsl::*;
@@ -201,9 +216,15 @@ where E: diesel::Expression<SqlType=diesel::sql_types::Bool> + diesel::expressio
             .expect("Unable to connect to DB for card lookup.")
     };
 
-    result.map(|(name, scryfalloracleid, manacost, types, convertedmanacost)| Card {
-        name, scryfalloracleid, manacost, types, convertedmanacost
-    })
+    result.map(
+        |(name, scryfalloracleid, manacost, types, convertedmanacost)| Card {
+            name,
+            scryfalloracleid,
+            manacost,
+            types,
+            convertedmanacost,
+        },
+    )
 }
 
 #[juniper::object(Context = Context)]
@@ -233,7 +254,7 @@ impl Query {
     }
 
     fn league(ctx: &Context, id: i32) -> Option<League> {
-        use crate::schema::leagues::dsl::{leagues, id as id_};
+        use crate::schema::leagues::dsl::{id as id_, leagues};
         let conn = ctx.pool.get().unwrap();
 
         leagues.filter(id_.eq(id)).first(&conn).optional().unwrap()
@@ -248,8 +269,8 @@ impl Query {
 
     /// Decks that contain the card with the given Scryfall Oracle ID.
     fn decks_with_card(ctx: &Context, id: Uuid) -> Vec<Deck> {
-        use crate::schema::decks::dsl::{decks, id as id_, active};
-        use crate::schema::deck_contents::dsl::{deck_contents, card, deck};
+        use crate::schema::deck_contents::dsl::{card, deck, deck_contents};
+        use crate::schema::decks::dsl::{active, decks, id as id_};
 
         let conn = ctx.pool.get().expect("Unable to get DB connection.");
 
@@ -260,7 +281,9 @@ impl Query {
             .get_results(&conn)
             .expect("Unable to connect to DB");
 
-        decks.filter(id_.eq_any(deck_ids).and(active.eq(false))).get_results(&conn)
+        decks
+            .filter(id_.eq_any(deck_ids).and(active.eq(false)))
+            .get_results(&conn)
             .expect("Unable to connect to DB")
     }
 }
@@ -272,20 +295,26 @@ impl Mutation {}
 
 type Schema = juniper::RootNode<'static, Query, Mutation>;
 
-async fn graphql(schema: web::Data<Arc<Schema>>, pool: web::Data<DbPool>, request: web::Json<GraphQLRequest>) -> WebResult<HttpResponse> {
+async fn graphql(
+    schema: web::Data<Arc<Schema>>,
+    pool: web::Data<DbPool>,
+    request: web::Json<GraphQLRequest>,
+) -> WebResult<HttpResponse> {
     let ctx = Context {
-        pool: pool.get_ref().to_owned()
+        pool: pool.get_ref().to_owned(),
     };
 
     let res = web::block(move || {
         let res = request.execute(&schema, &ctx);
 
         Ok::<_, serde_json::error::Error>(serde_json::to_string(&res)?)
-    }).await.map_err(WebError::from)?;
+    })
+    .await
+    .map_err(WebError::from)?;
 
     Ok(HttpResponse::Ok()
-       .content_type("application/json")
-       .body(res))
+        .content_type("application/json")
+        .body(res))
 }
 
 async fn playground() -> HttpResponse {

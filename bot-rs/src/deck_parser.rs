@@ -21,8 +21,6 @@ pub enum DeckError {
     InvalidCount { name: String, count: u32, max: u32 },
     #[error("Invalid cards: {0}")]
     InvalidCard(String),
-    #[error("Too many points: {points} (maximum is 10). Pointed Cards: {cards}")]
-    TooManyPoints { points: u32, cards: String },
     #[error("Sideboards are not allowed (you have {0} sideboard cards)")]
     NonEmptySideboard(u32),
     #[error("Deck contains banned cards: {0}")]
@@ -38,7 +36,10 @@ pub struct RawDeckEntry {
 }
 
 const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
-const BANNED_CARDS: [&str; 1] = ["60c60923-ff1b-43f7-8768-731499fcffc9"];
+const BANNED_CARDS: [&str; 1] = [
+    "60c60923-ff1b-43f7-8768-731499fcffc9",
+    "aa959340-c869-4caa-92c7-572bd8d23eef",
+];
 
 fn card(input: &str) -> IResult<&str, RawDeckEntry> {
     let count = map_res(digit1, |s: &str| s.parse::<u32>());
@@ -215,7 +216,7 @@ fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
         validate_count(name, *count)?;
     }
 
-    // TODO: Step 5: Check points
+    // Step 5: Check banned cards
     let banned = BANNED_CARDS
         .iter()
         .map(|u| Uuid::parse_str(u).unwrap())

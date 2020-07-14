@@ -208,18 +208,21 @@ where E: diesel::Expression<SqlType=diesel::sql_types::Bool> + diesel::expressio
 
 #[juniper::object(Context = Context)]
 impl Query {
-    /// Lookup a single card by its Scryfall Oracle ID.
-    fn card_by_oracle(ctx: &Context, id: Uuid) -> Option<Card> {
-        use crate::schema::cards::dsl::scryfalloracleid;
-        let conn = ctx.pool.get().expect("Unable to get DB connection.");
-        find_card(&conn, scryfalloracleid.eq(id))
-    }
+    /// Lookup a single card by its Scryfall Oracle ID or its Name.
+    fn card(ctx: &Context, oracle_id: Option<Uuid>, name: Option<String>) -> Option<Card> {
+        if let Some(id) = oracle_id {
+            use crate::schema::cards::dsl::scryfalloracleid;
+            let conn = ctx.pool.get().expect("Unable to get DB connection.");
 
-    fn card_by_name(ctx: &Context, name: String) -> Option<Card> {
-        use crate::schema::cards::dsl::name as name_;
-        let conn = ctx.pool.get().unwrap();
+            find_card(&conn, scryfalloracleid.eq(id))
+        } else if let Some(name) = name {
+            use crate::schema::cards::dsl::name as name_;
+            let conn = ctx.pool.get().unwrap();
 
-        find_card(&conn, name_.eq(name))
+            find_card(&conn, name_.eq(name))
+        } else {
+            None
+        }
     }
 
     fn leagues(ctx: &Context) -> Vec<League> {

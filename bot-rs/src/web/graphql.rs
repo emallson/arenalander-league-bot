@@ -4,7 +4,7 @@ use super::DbPool;
 use juniper::http::graphiql::graphiql_source;
 use juniper::http::GraphQLRequest;
 use uuid::Uuid;
-use crate::models::{Deck, League, DeckContents, DeckRecord};
+use crate::models::{Deck, League, DeckContents, DeckRecord, Match};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 
@@ -19,8 +19,6 @@ struct Query;
 // Card is special since we actually only have a subset of fields.
 struct Card {
     name: String,
-    setcode: String,
-    number: String,
     scryfalloracleid: Uuid,
     manacost: Option<String>,
     types: String,
@@ -31,14 +29,6 @@ struct Card {
 impl Card {
     fn name(&self) -> &str {
         &self.name
-    }
-
-    fn setcode(&self) -> &str {
-        &self.setcode
-    }
-
-    fn number(&self) -> &str {
-        &self.number
     }
 
     fn scryfall_oracle_id(&self) -> Uuid {
@@ -55,24 +45,6 @@ impl Card {
 
     fn cmc(&self) -> i32 {
         self.convertedmanacost as i32
-    }
-
-    /// Decks that contained the card in question.
-    fn decks(&self, ctx: &Context) -> Vec<Deck> {
-        use crate::schema::decks::dsl::*;
-        use crate::schema::deck_contents::dsl::{deck_contents, card, deck};
-
-        let conn = ctx.pool.get().expect("Unable to get DB connection.");
-
-        let deck_ids: Vec<i32> = deck_contents
-            .filter(card.eq(self.scryfalloracleid))
-            .select(deck)
-            .distinct()
-            .get_results(&conn)
-            .expect("Unable to connect to DB");
-
-        decks.filter(id.eq_any(deck_ids).and(active.eq(false))).get_results(&conn)
-            .expect("Unable to connect to DB")
     }
 }
 
@@ -133,24 +105,58 @@ impl Deck {
 
         deck_records.filter(id.eq(self.id)).first(&conn).unwrap()
     }
+
+    fn matches(&self, ctx: &Context) -> Vec<Match> {
+        use crate::schema::matches::dsl::*;
+        let conn = ctx.pool.get().unwrap();
+
+        matches.filter(confirmed.eq(true).and(winning_deck.eq(self.id).or(losing_deck.eq(self.id)))).get_results(&conn).unwrap()
+    }
+}
+
+#[juniper::object(Context = Context)]
+impl Match {
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn date(&self) -> DateTime<Utc> {
+        self.date
+    }
+
+    fn winner(&self, ctx: &Context) -> Deck {
+        use crate::schema::decks::dsl::*;
+        let conn = ctx.pool.get().unwrap();
+
+        decks.filter(id.eq(self.winning_deck)).first(&conn).unwrap()
+    }
+
+    fn loser(&self, ctx: &Context) -> Deck {
+        use crate::schema::decks::dsl::*;
+        let conn = ctx.pool.get().unwrap();
+
+        decks.filter(id.eq(self.losing_deck)).first(&conn).unwrap()
+    }
+
+    fn winner_wins(&self) -> i32 {
+        self.winner_wins
+    }
+
+    fn loser_wins(&self) -> i32 {
+        self.loser_wins
+    }
 }
 
 #[juniper::object(Context = Context)]
 impl DeckContents {
-    fn deck(&self, ctx: &Context) -> Deck {
-        use crate::schema::decks::dsl::*;
-        let conn = ctx.pool.get().unwrap();
-
-        decks.filter(id.eq(self.deck)).first(&conn).unwrap()
-    }
-
     fn count(&self) -> i32 {
         self.count
     }
 
     fn card(&self, ctx: &Context) -> Card {
+        use crate::schema::cards::dsl::scryfalloracleid;
         let conn = ctx.pool.get().unwrap();
-        find_card(&conn, self.card).unwrap()
+        find_card(&conn, scryfalloracleid.eq(self.card)).unwrap()
     }
 }
 
@@ -158,6 +164,10 @@ impl DeckContents {
 impl League {
     fn id(&self) -> i32 {
         self.id
+    }
+
+    fn title(&self) -> &str {
+        &self.title
     }
 
     fn start_date(&self) -> DateTime<Utc> {
@@ -177,20 +187,22 @@ impl League {
 }
 
 type PgConn = diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<PgConnection>>;
-fn find_card(conn: &PgConn, card_id: Uuid) -> Option<Card> {
+fn find_card<E>(conn: &PgConn, expr: E) -> Option<Card>
+where E: diesel::Expression<SqlType=diesel::sql_types::Bool> + diesel::expression::NonAggregate + diesel::expression::AppearsOnTable<crate::schema::cards::table> + diesel::query_builder::QueryId + diesel::query_builder::QueryFragment<diesel::pg::Pg>,
+{
     let result = {
         use crate::schema::cards::dsl::*;
 
         cards
-            .filter(scryfalloracleid.eq(card_id))
-            .select((name, setcode, number, scryfalloracleid, manacost, types, convertedmanacost))
+            .filter(expr)
+            .select((name, scryfalloracleid, manacost, types, convertedmanacost))
             .first(conn)
             .optional()
             .expect("Unable to connect to DB for card lookup.")
     };
 
-    result.map(|(name, setcode, number, scryfalloracleid, manacost, types, convertedmanacost)| Card {
-        name, setcode, number, scryfalloracleid, manacost, types, convertedmanacost
+    result.map(|(name, scryfalloracleid, manacost, types, convertedmanacost)| Card {
+        name, scryfalloracleid, manacost, types, convertedmanacost
     })
 }
 
@@ -198,8 +210,16 @@ fn find_card(conn: &PgConn, card_id: Uuid) -> Option<Card> {
 impl Query {
     /// Lookup a single card by its Scryfall Oracle ID.
     fn card_by_oracle(ctx: &Context, id: Uuid) -> Option<Card> {
+        use crate::schema::cards::dsl::scryfalloracleid;
         let conn = ctx.pool.get().expect("Unable to get DB connection.");
-        find_card(&conn, id)
+        find_card(&conn, scryfalloracleid.eq(id))
+    }
+
+    fn card_by_name(ctx: &Context, name: String) -> Option<Card> {
+        use crate::schema::cards::dsl::name as name_;
+        let conn = ctx.pool.get().unwrap();
+
+        find_card(&conn, name_.eq(name))
     }
 
     fn league(ctx: &Context, id: i32) -> Option<League> {
@@ -207,6 +227,31 @@ impl Query {
         let conn = ctx.pool.get().unwrap();
 
         leagues.filter(id_.eq(id)).first(&conn).optional().unwrap()
+    }
+
+    fn deck(ctx: &Context, id: i32) -> Option<Deck> {
+        use crate::schema::decks::dsl::{decks, id as id_};
+        let conn = ctx.pool.get().unwrap();
+
+        decks.filter(id_.eq(id)).first(&conn).optional().unwrap()
+    }
+
+    /// Decks that contain the card with the given Scryfall Oracle ID.
+    fn decks_with_card(ctx: &Context, id: Uuid) -> Vec<Deck> {
+        use crate::schema::decks::dsl::{decks, id as id_, active};
+        use crate::schema::deck_contents::dsl::{deck_contents, card, deck};
+
+        let conn = ctx.pool.get().expect("Unable to get DB connection.");
+
+        let deck_ids: Vec<i32> = deck_contents
+            .filter(card.eq(id))
+            .select(deck)
+            .distinct()
+            .get_results(&conn)
+            .expect("Unable to connect to DB");
+
+        decks.filter(id_.eq_any(deck_ids).and(active.eq(false))).get_results(&conn)
+            .expect("Unable to connect to DB")
     }
 }
 

@@ -7,6 +7,7 @@ use serenity::framework::standard::{
     CommandResult,
 };
 use serenity::model::channel::Message;
+use serenity::utils::MessageBuilder;
 use serenity::prelude::*;
 use std::collections::HashMap;
 
@@ -48,9 +49,19 @@ fn register(ctx: &mut Context, msg: &Message) -> CommandResult {
         &ctx.http,
         &"The LeagueBot will send you a direct message with further instructions.",
     )?;
-    msg.author.direct_message(&ctx, |m| {
+    if let Err(e) = msg.author.direct_message(&ctx, |m| {
         m.content("Please export your deck from MTG Arena and paste it here. If Discord asks, upload it as a text file.")
-    })?;
+    }) {
+        warn!("Unable to DM user for registration: {:?}", e);
+        let response = MessageBuilder::new()
+            .mention(&msg.author)
+            .push("I wasn't able to send you a DM. Do you have DMs from server members allowed?")
+            .build();
+        msg.channel_id.say(
+            &ctx.http,
+            response
+        )?;
+    }
     Ok(())
 }
 

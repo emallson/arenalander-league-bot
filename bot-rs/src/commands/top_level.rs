@@ -10,6 +10,8 @@ use serenity::model::channel::Message;
 use serenity::prelude::*;
 use std::collections::HashMap;
 
+use super::util::fmt_command;
+
 #[group]
 #[commands(register, league, resign, opponents)]
 pub(crate) struct League;
@@ -32,7 +34,7 @@ fn register(ctx: &mut Context, msg: &Message) -> CommandResult {
         let is_active = actions::league::check_active(&*conn, &msg.author)?;
         if is_active {
             debug!("!register by an active user");
-            msg.channel_id.say(&ctx.http, "You have a deck registered in this league already. If you would like to register with another deck, please resign from the league with the !resign command.")?;
+            msg.channel_id.say(&ctx.http, format!("You have a deck registered in this league already. If you would like to register with another deck, please resign from the league with the `{}` command.", fmt_command("resign")))?;
             return Ok(());
         }
     }
@@ -60,7 +62,7 @@ fn league(ctx: &mut Context, msg: &Message) -> CommandResult {
     let league = actions::league::current_league(&*conn.lock().unwrap())?;
 
     let message = match league {
-        Some(league) => format!("The {} League is currently active. It began on {} and runs until {}. To register a deck for the league, use `!register`. League standings can be viewed at {}/standings", league.title, league.start_date.format("%e %B %Y"), (league.end_date - Duration::seconds(1)).format("%r %Z on %e %B %Y"), BASE_URL),
+        Some(league) => format!("The {} League is currently active. It began on {} and runs until {}. To register a deck for the league, use `{}`. League standings can be viewed at {}/standings", league.title, league.start_date.format("%e %B %Y"), (league.end_date - Duration::seconds(1)).format("%r %Z on %e %B %Y"), fmt_command("register"), BASE_URL),
         None => "There is not currently a league active.".to_string()
     };
 
@@ -108,7 +110,7 @@ fn resign(ctx: &mut Context, msg: &Message) -> CommandResult {
         }
     } else {
         resignations.insert(msg.author.id, Utc::now());
-        msg.channel_id.say(&ctx.http, "Are you sure you want to resign? Your record will remain as-is and your decklist will become public. If you would like to resign, use the !resign command again.")?;
+        msg.channel_id.say(&ctx.http, format!("Are you sure you want to resign? Your record will remain as-is and your decklist will become public. If you would like to resign, use the `{}` command again.", fmt_command("resign")))?;
     }
     Ok(())
 }

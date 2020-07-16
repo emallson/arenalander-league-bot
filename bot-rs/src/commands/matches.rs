@@ -8,6 +8,7 @@ use serenity::utils::MessageBuilder;
 use serenity::Result;
 
 use crate::{actions, deck_url, logged_dm, DbConn, ACTIVE_CHECK};
+use super::util::fmt_command;
 
 #[group]
 #[prefix("match")]
@@ -23,7 +24,7 @@ fn respond_parse_error<E: std::fmt::Display>(
     err: ArgError<E>,
 ) -> Result<Message> {
     msg.channel_id.say(&ctx.http, match err {
-        ArgError::Eos => "Not enough arguments for that command. If you're not sure how to use it, try `!help`.".to_owned(),
+        ArgError::Eos => format!("Not enough arguments for that command. If you're not sure how to use it, try `{}`.", fmt_command("help")),
         ArgError::Parse(err) => format!("Unable to parse command argument: {}", err),
         _ => "Unable to parse command argument: unknown parse error occurred".to_owned(),
     })
@@ -104,9 +105,9 @@ fn report(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
             let response = MessageBuilder::new()
                 .push(format!("You reported that you won {}-{} against {}. ", wins, losses, opponent.name))
                 .mention(opponent)
-                .push(" please use `!match confirm` if the results are correct. If there was an error entering your results, ")
+                .push(format!(" please use `{}` if the results are correct. If there was an error entering your results, ", fmt_command("match confirm")))
                 .mention(&msg.author)
-                .push(" can use `!match undo`.")
+                .push(format!(" can use `{}`.", fmt_command("match undo")))
                 .build();
             msg.channel_id.say(&ctx.http, response)?;
         }

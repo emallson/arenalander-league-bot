@@ -23,7 +23,7 @@ pub(crate) struct LeagueControl;
 #[delimiters(", ")]
 #[description("Define a new league. All times are in UTC")]
 #[usage("<title>, <start-date>, <end-date>")]
-#[example("!new-league April 2020, 1 April 2020, 1 May 2020")]
+#[example("April 2020, 1 April 2020, 1 May 2020")]
 fn new_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult {
     let data = ctx.data.read();
     let conn = data.get::<DbConn>().unwrap();

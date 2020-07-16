@@ -4,5 +4,9 @@ services:
     ports:
       - "3000:3000"
   db:
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: arstarst
+      POSTGRES_DB: db
     ports:
       - "5432:5432"

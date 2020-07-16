@@ -2,15 +2,13 @@ version: '2.0'
 services:
   botrs:
     build: ./bot-rs/
+    image: emallson/gladiator-bot-discord:latest
     env_file: ./bot-rs/.env
     depends_on:
       - db
   db:
     build: './db-setup/'
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: arstarst
-      POSTGRES_DB: db
+    image: emallson/gladiator-bot-db:latest
     expose:
       - 5432
     volumes:

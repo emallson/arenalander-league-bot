@@ -92,14 +92,18 @@ impl Deck {
         self.resigned
     }
 
-    fn cards(&self, ctx: &Context) -> Vec<DeckContents> {
+    fn cards(&self, ctx: &Context) -> Option<Vec<DeckContents>> {
         use crate::schema::deck_contents::dsl::*;
-        let conn = ctx.pool.get().unwrap();
+        if self.active {
+            None
+        } else {
+            let conn = ctx.pool.get().unwrap();
 
-        deck_contents
-            .filter(deck.eq(self.id))
-            .get_results(&conn)
-            .unwrap()
+            Some(deck_contents
+                .filter(deck.eq(self.id))
+                .get_results(&conn)
+                .unwrap())
+        }
     }
 
     fn record(&self, ctx: &Context) -> DeckRecord {

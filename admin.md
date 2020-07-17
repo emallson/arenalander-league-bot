@@ -52,6 +52,19 @@ This marks all league decks as *inactive* (meaning: they are publically
 visible). This is *not* the same as resigning, and they won't show as resigned
 on the league standings.
 
+## Confirm a Match
+
+If a player has reported a match using `?match report` but their opponent has
+not (or will not) confirm the match **and** you are confident that it should be
+confirmed, then you can run:
+
+```
+?admin confirm_match <loser>
+```
+
+where `<loser>` is the @mention of the player that would normally run `?match
+confirm`.
+
 ## Ban a Card
 
 Banning a card requires modifying the `BANNED_CARDS` list in the code and then

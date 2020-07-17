@@ -7,7 +7,7 @@ use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 use serenity::Result;
 
-use crate::{actions, deck_url, logged_dm, DbConn, ACTIVE_CHECK};
+use crate::{actions, DbConn, ACTIVE_CHECK};
 use super::util::fmt_command;
 
 #[group]
@@ -18,7 +18,7 @@ use super::util::fmt_command;
 #[commands(report, undo, confirm, dispute)]
 pub(crate) struct LeagueMatchGroup;
 
-fn respond_parse_error<E: std::fmt::Display>(
+pub(crate) fn respond_parse_error<E: std::fmt::Display>(
     ctx: &mut Context,
     msg: &Message,
     err: ArgError<E>,
@@ -131,38 +131,15 @@ fn confirm(ctx: &mut Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read();
     let conn = data.get::<DbConn>().unwrap().lock().unwrap();
 
-    match actions::matches::confirm_match(&*conn, &msg.author) {
+    match actions::matches::confirm_match(&*conn, ctx, &msg.author) {
         Ok(Some((
             _match,
             winner,
             winner_done,
             loser_done,
-            winner_deck,
-            winner_token,
-            loser_deck,
-            loser_token,
         ))) => {
             msg.channel_id
                 .say(&ctx.http, "Thanks for confirming the match!")?;
-            let winner = winner.to_user(&ctx.http)?;
-
-            logged_dm(
-                ctx,
-                &msg.author,
-                &format!(
-                    "Match recorded. Here is your opponent's deck for confirmation: {}",
-                    deck_url(winner_deck, Some(loser_token))
-                ),
-            );
-
-            logged_dm(
-                ctx,
-                &winner,
-                &format!(
-                    "Match recorded. Here is your opponent's deck for confirmation: {}",
-                    deck_url(loser_deck, Some(winner_token))
-                ),
-            );
 
             if loser_done {
                 let response = MessageBuilder::new()

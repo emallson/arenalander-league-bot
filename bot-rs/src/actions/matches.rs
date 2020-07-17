@@ -2,6 +2,7 @@ use super::lookup::{lookup_deck, lookup_match, lookup_user};
 use crate::actions::token::generate_token;
 use crate::models::{Deck, Dispute, Match};
 use crate::schema::matches::dsl::*;
+use crate::{deck_url, logged_dm};
 use anyhow::Result;
 use chrono::Utc;
 use diesel::prelude::*;
@@ -9,8 +10,8 @@ use diesel::PgConnection;
 use diesel::{delete, insert_into, update};
 use serenity::model::id::UserId;
 use serenity::model::user::User as SerenityUser;
+use serenity::prelude::Context;
 use thiserror::Error;
-use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum MatchError {
@@ -18,6 +19,8 @@ pub enum MatchError {
     MatchExists,
     #[error("An unconfirmed match from this user is pending.")]
     MatchPending,
+    #[error("No pending unconfirmed match found.")]
+    NoPendingMatch
 }
 
 pub fn unconfirmed_match(conn: &PgConnection, user: &SerenityUser) -> Result<Option<()>> {
@@ -80,10 +83,15 @@ pub fn report_match(
 // todo: return value should be a struct here
 pub fn confirm_match(
     conn: &PgConnection,
+    ctx: &Context,
     loser: &SerenityUser,
-) -> Result<Option<(Match, UserId, bool, bool, i32, Uuid, i32, Uuid)>> {
+) -> Result<Option<(Match, SerenityUser, bool, bool)>> {
     use crate::schema::decks::dsl::*;
-    let loser_deck = lookup_deck(conn, loser)?.unwrap();
+    let loser_deck =  if let Some(deck) = lookup_deck(conn, loser)? {
+        deck
+    } else {
+        return Err(MatchError::NoPendingMatch.into());
+    };
 
     let res: Option<Match> = update(matches)
         .filter(losing_deck.eq(loser_deck.id).and(confirmed.eq(false)))
@@ -113,6 +121,8 @@ pub fn confirm_match(
             )
         };
 
+        let winner = winner.to_user(&ctx.http)?;
+
         let winner_done = count_matches(conn, &winner_deck)? >= MAX_MATCHES;
         if winner_done {
             update(decks)
@@ -123,15 +133,29 @@ pub fn confirm_match(
 
         let winner_token = generate_token(conn, loser_deck.id)?;
         let loser_token = generate_token(conn, winner_deck.id)?;
+
+            logged_dm(
+                ctx,
+                &loser,
+                &format!(
+                    "Match recorded. Here is your opponent's deck for confirmation: {}",
+                    deck_url(winner_deck.id, Some(loser_token))
+                ),
+            );
+
+            logged_dm(
+                ctx,
+                &winner,
+                &format!(
+                    "Match recorded. Here is your opponent's deck for confirmation: {}",
+                    deck_url(loser_deck.id, Some(winner_token))
+                ),
+            );
         Ok(Some((
             match_,
             winner,
             winner_done,
             loser_done,
-            winner_deck.id,
-            winner_token,
-            loser_deck.id,
-            loser_token,
         )))
     } else {
         Ok(None)

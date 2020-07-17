@@ -2,19 +2,22 @@ use chrono::Utc;
 use chrono_english::{parse_date_string, Dialect};
 use serenity::framework::standard::{
     macros::{command, group},
-    Args, CommandResult,
+    Args, CommandResult, ArgError,
 };
 use serenity::model::channel::Message;
+use serenity::utils::MessageBuilder;
 use serenity::prelude::*;
 
 use crate::actions;
 use crate::DbConn;
+use super::matches::respond_parse_error;
+use crate::actions::matches;
 
 #[group]
 #[prefix("admin")]
 #[only_in(guilds)]
 #[required_permissions("ADMINISTRATOR")]
-#[commands(new_league, list_leagues, delete_league, finalize_league)]
+#[commands(new_league, list_leagues, delete_league, finalize_league, confirm_match)]
 pub(crate) struct LeagueControl;
 
 #[command]
@@ -102,6 +105,38 @@ fn finalize_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandR
         id, count
     );
     msg.channel_id.say(&ctx.http, &message)?;
+
+    Ok(())
+}
+
+#[command]
+#[only_in(guilds)]
+#[description("Confirm a match. Used when a user unexpectedly AWOLs without confirming.")]
+#[usage("<loser>")]
+#[example("@emallson")]
+fn confirm_match(ctx: &mut Context, msg: &Message) -> CommandResult {
+    let loser = if let Some(user) = msg.mentions.get(0) {
+        user
+    } else {
+        respond_parse_error(ctx, msg, ArgError::Parse("not enough mentions."))?;
+        return Ok(());
+    };
+
+    let data = ctx.data.read();
+    let conn = data.get::<DbConn>().unwrap();
+
+    if let Some((_, winner, _, _)) = matches::confirm_match(&*conn.lock().unwrap(), ctx, loser)? {
+        let res = MessageBuilder::new()
+            .push("Match between ")
+            .mention(&winner)
+            .push(" and ")
+            .mention(loser)
+            .push(" has been manually confirmed. Each should receive a link to their opponent's deck.")
+            .build();
+        msg.channel_id.say(&ctx.http, res)?;
+    } else {
+        msg.channel_id.say(&ctx.http, "No pending match for this user found.")?;
+    }
 
     Ok(())
 }

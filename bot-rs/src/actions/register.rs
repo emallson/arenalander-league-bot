@@ -91,7 +91,7 @@ pub fn resign(conn: &PgConnection, user: &SerenityUser) -> Result<()> {
     let current_league = current_league.unwrap();
 
     update(decks)
-        .filter(owner.eq(user.id).and(league.eq(current_league.id)))
+        .filter(owner.eq(user.id).and(league.eq(current_league.id)).and(active.eq(true)))
         .set((active.eq(false), resigned.eq(true)))
         .execute(conn)?;
 

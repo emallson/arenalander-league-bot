@@ -54,7 +54,7 @@ fn get_standings(
     conn: &PgConnection,
     league_id: Option<i32>,
 ) -> Result<Vec<(Deck, User, DeckRecord)>> {
-    use crate::schema::deck_records::dsl::deck_records;
+    use crate::schema::deck_records::dsl::{deck_records, match_wins, match_losses, game_wins, game_losses};
     use crate::schema::decks::dsl::*;
     use crate::schema::users::dsl::users;
 
@@ -67,6 +67,7 @@ fn get_standings(
         .inner_join(users)
         .inner_join(deck_records)
         .filter(league.eq(league_.unwrap().id))
+        .order_by((match_wins.desc(), match_losses.asc(), game_wins.desc(), game_losses.asc()))
         .get_results(conn)?;
 
     Ok(current_decks)
@@ -75,6 +76,7 @@ fn get_standings(
 #[derive(Template)]
 #[template(path = "standings.html")]
 struct Standings {
+    league: League,
     contents: Vec<(Deck, User, DeckRecord)>,
     leaders: Vec<(String, usize)>,
 }
@@ -97,9 +99,12 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
         HttpResponse::InternalServerError().finish()
     })?;
 
+    let conn = pool.get().expect("Unable to get DB connection");
+    let league = web::block(move || current_league(&conn)).await?.unwrap();
+
     Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .body(Standings { contents, leaders }.render().unwrap()))
+        .body(Standings { league, contents, leaders }.render().unwrap()))
 }
 
 #[get("/{id}")]
@@ -124,9 +129,12 @@ async fn standings_for(
         HttpResponse::InternalServerError().finish()
     })?;
 
+    let conn = pool.get().expect("Unable to get DB connection");
+    let league = web::block(move || get_league(&conn, Some(lid))).await?.unwrap();
+
     Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .body(Standings { contents, leaders }.render().unwrap()))
+        .body(Standings { league, contents, leaders }.render().unwrap()))
 }
 
 pub fn service() -> Scope {

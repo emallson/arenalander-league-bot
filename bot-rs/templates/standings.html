@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block head_title %}League Standings{% endblock %}
-{% block title %}League Standings{% endblock %}
+{% block head_title %}{{ league.title }} League Standings{% endblock %}
+{% block title %}{{ league.title }} League Standings{% endblock %}
+{% block subtitle %}<a href="/standings/{{ league.id }}">Permalink</a>{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="/public/css/standings.css" />

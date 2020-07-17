@@ -55,12 +55,8 @@ pub fn report_match(
     }
 
     let winner_deck = lookup_deck(conn, winner)?.unwrap();
-    let unconfirmed_match: Option<Match> = matches
-        .filter(winning_deck.eq(winner_deck.id).and(confirmed.eq(false)))
-        .get_result(conn)
-        .optional()?;
 
-    if unconfirmed_match.is_some() {
+    if unconfirmed_match(conn, winner)?.is_some() || unconfirmed_match(conn, loser)?.is_some() {
         return Err(MatchError::MatchPending.into());
     }
 

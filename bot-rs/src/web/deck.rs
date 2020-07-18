@@ -172,6 +172,7 @@ fn get_deck(
         deck_contents
             .filter(deck.eq(deck_id))
             .inner_join(cards.on(scryfalloracleid.eq(card)))
+            .filter(side.eq("a").or(side.is_null()))
             .select((
                 dcid,
                 count,
@@ -200,7 +201,6 @@ fn get_deck(
                 });
 
                 entry.count += count as usize;
-                println!("{:?}", entry);
 
                 map
             },
@@ -222,11 +222,14 @@ fn get_deck(
     // deal with split+adventure cards a BTreeMap maintains its keys in order, which for enums with
     // #[derive(Ord)] is the order in which they are defined. as a result, Creature come first so
     // adventure cards will always get displayed as a creature. Other split cards are a crapshot.
+    //
+    // this step is DEPRECATED but i'm leaving it in until more testing is done
     let mut uuid_map = BTreeSet::new();
 
     for val in cards.values_mut() {
         val.0.retain(|card| {
             if uuid_map.contains(&card.uuid) {
+                warn!("duplicate display card: {:?}", card);
                 false
             } else {
                 uuid_map.insert(card.uuid);

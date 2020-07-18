@@ -97,6 +97,7 @@ table! {
         manacost -> Nullable<Text>,
         types -> Text,
         convertedmanacost -> Float8,
+        side -> Nullable<Text>,
     }
 }
 

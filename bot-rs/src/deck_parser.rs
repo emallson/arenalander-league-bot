@@ -143,7 +143,7 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
     use super::schema::cards::dsl::*;
 
     let res = if card.code.is_some() && card.set.is_some()
-        && !SETS_BY_NAME.iter().any(|c| Some(*c) == card.code.as_ref().map(|c| c.as_str())) {
+        && !SETS_BY_NAME.iter().any(|c| *c == card.code.as_ref().unwrap()) {
         // prefer lookup by setcode + number
         cards
             .select(scryfalloracleid)

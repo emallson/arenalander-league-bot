@@ -133,11 +133,17 @@ fn validate_count(name: &str, count: u32) -> Result<()> {
     }
 }
 
+/// A list of sets where we key off of name instead of setcode + number. Used
+/// when Arena exports wonky values, such as AJMP cards being exported as JMP
+/// with duplicate (setcode, number) tuples.
+const SETS_BY_NAME: [&str; 1] = ["JMP"];
+
 // TODO: bulk lookup
 fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
     use super::schema::cards::dsl::*;
 
-    let res = if card.code.is_some() && card.set.is_some() {
+    let res = if card.code.is_some() && card.set.is_some()
+        && !SETS_BY_NAME.iter().any(|c| Some(*c) == card.code.as_ref().map(|c| c.as_str())) {
         // prefer lookup by setcode + number
         cards
             .select(scryfalloracleid)

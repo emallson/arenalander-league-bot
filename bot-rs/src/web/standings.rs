@@ -44,6 +44,7 @@ fn get_user_standings(conn: &PgConnection, league_id: Option<i32>) -> Result<Vec
     let mut results = results
         .into_iter()
         .map(|(u, w, runs)| (u, (w + runs) as usize))
+        .filter(|&(_, points)| points > 0)
         .collect::<Vec<_>>();
     results.sort_by_key(|&(_, points)| std::cmp::Reverse(points));
 
@@ -67,6 +68,7 @@ fn get_standings(
         .inner_join(users)
         .inner_join(deck_records)
         .filter(league.eq(league_.unwrap().id))
+        .filter(match_wins.gt(0).or(match_losses.gt(0)))
         .order_by((match_wins.desc(), match_losses.asc(), game_wins.desc(), game_losses.asc()))
         .get_results(conn)?;
 

@@ -59,6 +59,16 @@ pub struct Card {
     pub manacost: Option<String>,
     pub types: String,
     pub convertedmanacost: f64,
+    pub uuid: Uuid,
+}
+
+#[derive(Queryable, Clone, PartialEq)]
+pub struct CardName {
+    pub id: i64,
+    pub language: String,
+    pub name: String,
+    pub uuid: Uuid,
+    pub scryfalloracleid: Uuid,
 }
 
 #[allow(non_snake_case)]

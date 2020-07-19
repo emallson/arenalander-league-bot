@@ -1,4 +1,14 @@
 table! {
+    card_names (id) {
+        id -> Int4,
+        uuid -> Uuid,
+        scryfalloracleid -> Uuid,
+        language -> Text,
+        name -> Text,
+    }
+}
+
+table! {
     deck_contents (id) {
         id -> Int4,
         deck -> Int4,
@@ -98,6 +108,7 @@ table! {
         types -> Text,
         convertedmanacost -> Float8,
         side -> Nullable<Text>,
+        uuid -> Uuid,
     }
 }
 
@@ -112,6 +123,7 @@ joinable!(disputes -> matches (matchid));
 joinable!(disputes -> users (disputer));
 
 allow_tables_to_appear_in_same_query!(
+    card_names,
     deck_contents,
     deck_view_tokens,
     decks,

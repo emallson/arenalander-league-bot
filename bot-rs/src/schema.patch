@@ -2,7 +2,7 @@ diff --git b/bot-rs/src/schema.rs a/bot-rs/src/schema.rs
 index 703f513..9285e19 100644
 --- b/bot-rs/src/schema.rs
 +++ a/bot-rs/src/schema.rs
-@@ -63,12 +63,50 @@ table! {
+@@ -63,12 +63,51 @@ table! {
          id -> Int4,
          discordid -> Int8,
          name -> Text,
@@ -41,6 +41,7 @@ index 703f513..9285e19 100644
 +        types -> Text,
 +        convertedmanacost -> Float8,
 +        side -> Nullable<Text>,
++        uuid -> Uuid,
 +    }
 +}
 +

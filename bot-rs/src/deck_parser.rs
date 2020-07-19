@@ -141,9 +141,10 @@ const SETS_BY_NAME: [&str; 1] = ["JMP"];
 // TODO: bulk lookup
 fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
     use super::schema::cards::dsl::*;
+    use super::schema::card_names::dsl::{card_names, name as alt_name, scryfalloracleid as alt_id};
 
     let res = if card.code.is_some() && card.set.is_some()
-        && !SETS_BY_NAME.iter().any(|c| *c == card.code.as_ref().unwrap()) {
+        && !SETS_BY_NAME.iter().any(|c| *c == card.set.as_ref().unwrap()) {
         // prefer lookup by setcode + number
         cards
             .select(scryfalloracleid)
@@ -164,8 +165,9 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
         res
     } else {
         cards
+            .inner_join(card_names.on(scryfalloracleid.eq(alt_id)))
             .select(scryfalloracleid)
-            .filter(name.eq(&card.name))
+            .filter(name.eq(&card.name).or(alt_name.eq(&card.name)))
             .first(conn)
             .optional()
             .expect("Unable to connect to DB for card lookup.")
@@ -349,5 +351,21 @@ mod test {
         use super::{parse_decklist, validate_decklist};
         let (_, deck) = parse_decklist(REG_TEST_LIST_TOO_SMALL).unwrap();
         validate_decklist(&conn, deck).unwrap();
+    }
+
+    #[test]
+    fn jumpstart_hacks() {
+        use diesel::pg::PgConnection;
+        use diesel::prelude::*;
+        use std::env;
+        use uuid::Uuid;
+
+        let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set.");
+        let conn = PgConnection::establish(&database_url).expect("Unable to connect to database.");
+        use super::{parse_decklist, validate_decklist};
+        let (_, deck) = parse_decklist("Deck\n1 Oriflama trasga (JMP) 130\n99 Mountain\n").unwrap();
+        let deck = validate_decklist(&conn, deck).unwrap();
+
+        assert_eq!(deck[0].uuid, Uuid::parse_str("836bd011-2da5-443a-a814-19a664b98a1a").unwrap());
     }
 }

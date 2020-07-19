@@ -75,7 +75,7 @@ Deck
 1 Foul Orchard (M19) 251
 1 Tranquil Thicket (ONS) 326
 1 Indatha Triome (IKO) 248
-1 Field of the Dead (M20) 247
+1 Mountain
 1 Vivien, Monsters' Advocate (IKO) 175
 1 Kogla, the Titan Ape (IKO) 162
 1 Gyruda, Doom of Depths (IKO) 221

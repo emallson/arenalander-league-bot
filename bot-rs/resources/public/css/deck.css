@@ -99,3 +99,10 @@ footer {
         width: 20em;
     }
 }
+
+.copy-success::after {
+    content: '✔';
+    margin-left: 0.5em;
+    position: absolute;
+    color: green;
+}

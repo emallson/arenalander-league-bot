@@ -165,7 +165,7 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
         res
     } else {
         cards
-            .inner_join(card_names.on(scryfalloracleid.eq(alt_id)))
+            .left_join(card_names.on(scryfalloracleid.eq(alt_id)))
             .select(scryfalloracleid)
             .filter(name.eq(&card.name).or(alt_name.eq(&card.name)))
             .first(conn)
@@ -269,6 +269,7 @@ mod test {
     const TEST_MAIN_ONLY: &str = include_str!("test_main_only.txt");
     const TEST_LIST_INVALID: &str = include_str!("test_invalid.txt");
     const REG_TEST_LIST_TOO_SMALL: &str = include_str!("gm_too_small.txt");
+    const JMP_BS: &str = include_str!("jmp_deck.txt");
 
     const TEST_CARD: &str = "1 Lazotep Plating (WAR) 59";
     const TEST_ISLAND: &str = "12 Island (ANA) 57";
@@ -367,5 +368,8 @@ mod test {
         let deck = validate_decklist(&conn, deck).unwrap();
 
         assert_eq!(deck[0].uuid, Uuid::parse_str("836bd011-2da5-443a-a814-19a664b98a1a").unwrap());
+
+        let (_, deck) = parse_decklist(JMP_BS).unwrap();
+        validate_decklist(&conn, deck).unwrap();
     }
 }

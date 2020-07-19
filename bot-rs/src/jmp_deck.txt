@@ -1,0 +1,8 @@
+Deck
+1 Thriving Moor (JMP) 37
+1 Thriving Bluff (JMP) 33
+1 Thriving Heath (JMP) 35
+1 Thriving Grove (JMP) 34
+1 Thriving Isle (JMP) 36
+1 Selvala, Heart of the Wilds (JMP) 429
+100 Mountain

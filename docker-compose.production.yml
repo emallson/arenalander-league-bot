@@ -5,7 +5,6 @@ services:
       - "80:80"
       - "443:443"
     env_file: ./prod/env
-    image: emallson/gladiator-bot-discord:prod
     build: ./prod/build/
     volumes:
       - ./prod/nginx:/etc/nginx/conf.d

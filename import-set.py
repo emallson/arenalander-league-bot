@@ -40,6 +40,7 @@ def card_to_rows(card):
     del row['id']
 
     try:
+        row['name'] = card['faceName'] if 'faceName' in card else card['name']
         row['isarena'] = 'arena' in card['availability']
         row['scryfallid'] = card['identifiers']['scryfallId']
         row['scryfalloracleid'] = card['identifiers']['scryfallOracleId']

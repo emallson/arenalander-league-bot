@@ -102,11 +102,16 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
     })?;
 
     let conn = pool.get().expect("Unable to get DB connection");
-    let league = web::block(move || current_league(&conn)).await?.unwrap();
+    let league = web::block(move || current_league(&conn)).await?;
 
-    Ok(HttpResponse::Ok()
-        .content_type("text/html")
-        .body(Standings { league, contents, leaders }.render().unwrap()))
+    if let Some(league) = league {
+        Ok(HttpResponse::Ok()
+           .content_type("text/html")
+           .body(Standings { league, contents, leaders }.render().unwrap()))
+    } else {
+        Ok(HttpResponse::NotFound().finish())
+    }
+
 }
 
 #[get("/{id}")]

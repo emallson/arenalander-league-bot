@@ -6,7 +6,8 @@ create table card_names (
        uuid uuid not null references cards(uuid),
        scryfalloracleid uuid not null,
        language text not null,
-       name text not null
+       name text not null,
+       unique(uuid, language)
 );
 
 create index on card_names (scryfalloracleid);

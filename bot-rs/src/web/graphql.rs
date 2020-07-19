@@ -174,6 +174,27 @@ impl DeckContents {
     }
 }
 
+struct LeagueDecks {
+    decks: Vec<Deck>,
+    next_offset: Option<i32>,
+    total: i32
+}
+
+#[juniper::object(Context=Context)]
+impl LeagueDecks {
+    fn decks(&self) -> &Vec<Deck> {
+        &self.decks
+    }
+
+    fn next_offset(&self) -> Option<i32> {
+        self.next_offset
+    }
+
+    fn total(&self) -> i32 {
+        self.total
+    }
+}
+
 #[juniper::object(Context = Context)]
 impl League {
     fn id(&self) -> i32 {
@@ -192,11 +213,20 @@ impl League {
         self.end_date
     }
 
-    fn decks(&self, ctx: &Context) -> Vec<Deck> {
+    /// Returns up to 25 decks at a time.
+    fn decks(&self, ctx: &Context, offset: Option<i32>) -> LeagueDecks {
         use crate::schema::decks::dsl::*;
         let conn = ctx.pool.get().unwrap();
 
-        decks.filter(league.eq(self.id)).get_results(&conn).unwrap()
+        let offset = offset.unwrap_or(0).max(0);
+
+        let decks_ = decks.filter(league.eq(self.id)).limit(25).offset(offset as i64).get_results(&conn).unwrap();
+        let total = decks.filter(league.eq(self.id)).count().get_result::<i64>(&conn).unwrap() as i32;
+        LeagueDecks {
+            decks: decks_,
+            total,
+            next_offset: if offset + 25 > total { None } else { Some(offset + 25) }
+        }
     }
 }
 

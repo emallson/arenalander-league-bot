@@ -1,5 +1,5 @@
 use super::DbPool;
-use crate::models::{Deck, DeckContents, DeckRecord, League, Match};
+use crate::models::{Deck, DeckRecord, League, Match};
 use actix_web::{web, Error as WebError, HttpResponse, Result as WebResult, Scope};
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
@@ -26,7 +26,7 @@ struct Card {
     convertedmanacost: f64,
 }
 
-#[juniper::object(Context = Context)]
+#[juniper::object]
 impl Card {
     fn name(&self) -> &str {
         &self.name
@@ -72,6 +72,22 @@ impl DeckRecord {
     }
 }
 
+struct DeckContents {
+    count: i32,
+    card: Card
+}
+
+#[juniper::object]
+impl DeckContents {
+    fn count(&self) -> i32 {
+        self.count
+    }
+
+    fn card(&self) -> &Card {
+        &self.card
+    }
+}
+
 #[juniper::object(Context = Context)]
 impl Deck {
     fn id(&self) -> i32 {
@@ -105,17 +121,34 @@ impl Deck {
     }
 
     fn cards(&self, ctx: &Context) -> Option<Vec<DeckContents>> {
-        use crate::schema::deck_contents::dsl::*;
-        if self.active {
+        let contents: Option<Vec<_>> = if self.active {
             None
         } else {
+            use crate::schema::deck_contents::dsl::*;
+            use crate::schema::cards::dsl::{cards, name, scryfallid, manacost, types, convertedmanacost, scryfalloracleid};
+
             let conn = ctx.pool.get().unwrap();
 
             Some(deck_contents
-                .filter(deck.eq(self.id))
-                .get_results(&conn)
-                .unwrap())
-        }
+                 .filter(deck.eq(self.id))
+                 .inner_join(cards.on(scryfalloracleid.eq(card)))
+                 .select((count, name, scryfallid, scryfalloracleid, manacost, types, convertedmanacost))
+                 .distinct_on(scryfalloracleid)
+                 .get_results(&conn)
+                 .unwrap())
+        };
+
+        contents.map(|c| c.into_iter().map(|(count, name, scryfallid, scryfalloracleid, manacost, types, convertedmanacost)| DeckContents {
+            count,
+            card: Card {
+                name,
+                scryfallid,
+                scryfalloracleid,
+                manacost,
+                types,
+                convertedmanacost
+            }
+        }).collect())
     }
 
     fn record(&self, ctx: &Context) -> DeckRecord {
@@ -170,19 +203,6 @@ impl Match {
 
     fn loser_wins(&self) -> i32 {
         self.loser_wins
-    }
-}
-
-#[juniper::object(Context = Context)]
-impl DeckContents {
-    fn count(&self) -> i32 {
-        self.count
-    }
-
-    fn card(&self, ctx: &Context) -> Card {
-        use crate::schema::cards::dsl::scryfalloracleid;
-        let conn = ctx.pool.get().unwrap();
-        find_card(&conn, scryfalloracleid.eq(self.card)).unwrap()
     }
 }
 

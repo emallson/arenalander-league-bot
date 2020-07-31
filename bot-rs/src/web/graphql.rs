@@ -19,6 +19,7 @@ struct Query;
 // Card is special since we actually only have a subset of fields.
 struct Card {
     name: String,
+    scryfallid: Uuid,
     scryfalloracleid: Uuid,
     manacost: Option<String>,
     types: String,
@@ -29,6 +30,10 @@ struct Card {
 impl Card {
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn scryfall_id (&self) -> Uuid {
+        self.scryfallid
     }
 
     fn scryfall_oracle_id(&self) -> Uuid {
@@ -71,6 +76,13 @@ impl DeckRecord {
 impl Deck {
     fn id(&self) -> i32 {
         self.id
+    }
+
+    /// ID of the player that created the deck.
+    ///
+    /// WARNING: These IDs may not remain the same value or even type!
+    fn player(&self) -> i32 {
+        self.owner
     }
 
     fn league(&self, ctx: &Context) -> Option<League> {
@@ -244,15 +256,16 @@ where
 
         cards
             .filter(expr)
-            .select((name, scryfalloracleid, manacost, types, convertedmanacost))
+            .select((name, scryfallid, scryfalloracleid, manacost, types, convertedmanacost))
             .first(conn)
             .optional()
             .expect("Unable to connect to DB for card lookup.")
     };
 
     result.map(
-        |(name, scryfalloracleid, manacost, types, convertedmanacost)| Card {
+        |(name, scryfallid, scryfalloracleid, manacost, types, convertedmanacost)| Card {
             name,
+            scryfallid,
             scryfalloracleid,
             manacost,
             types,

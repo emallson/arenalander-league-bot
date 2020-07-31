@@ -103,6 +103,7 @@ table! {
         number -> Text,
         setcode -> Text,
         isarena -> Int8,
+        scryfallid -> Uuid,
         scryfalloracleid -> Uuid,
         manacost -> Nullable<Text>,
         types -> Text,

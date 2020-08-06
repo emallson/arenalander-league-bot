@@ -250,6 +250,7 @@ fn get_deck(
         user: user_,
         league: league_,
         sections: cards,
+        creation_date: deck_.creation_date.format("%e %B %Y").to_string(),
         meta,
         matches,
     }))
@@ -344,6 +345,7 @@ struct DeckTemplate {
     user: User,
     league: League,
     sections: CardSections,
+    creation_date: String,
     meta: MetaInfo,
     matches: Vec<DisplayMatch>,
 }

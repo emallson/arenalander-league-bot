@@ -23,6 +23,7 @@
                 <td>Player</td>
                 <td>League</td>
                 <td>Record</td>
+                <td>Registration Date</td>
                 <td title="Opponents' Match Win Percentage">OMW</td>
             </tr>
         </thead>
@@ -31,6 +32,7 @@
                 <td>{{ user.name }}</td>
                 <td>{{ league.title }}</td>
                 <td style="text-align: right;">{{ meta.match_wins }}&ndash;{{ meta.match_losses}}</td>
+                <td>{{ creation_date }}
                 <td style="text-align: right;">{{ "{:.1}%"|format(meta.omw) }}</td>
             </tr>
         </tbody>

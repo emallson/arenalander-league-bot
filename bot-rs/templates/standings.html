@@ -27,21 +27,23 @@
                 <tr>
                     <td>{{ record.1.name }}</td>
                     <td class="color-bar">
-                        {% let total_symbols = record.0.symbols_w + record.0.symbols_u + record.0.symbols_b + record.0.symbols_r + record.0.symbols_g %}
-                        {% if record.0.symbols_w > 0 %}
-                        <div class="color-bar-w" style="width: {{ (record.0.symbols_w * 100) / total_symbols }}%"></div>
-                        {% endif %}
-                        {% if record.0.symbols_u > 0 %}
-                        <div class="color-bar-u" style="width: {{ (record.0.symbols_u * 100) / total_symbols }}%"></div>
-                        {% endif %}
-                        {% if record.0.symbols_b > 0 %}
-                        <div class="color-bar-b" style="width: {{ (record.0.symbols_b * 100) / total_symbols }}%"></div>
-                        {% endif %}
-                        {% if record.0.symbols_r > 0 %}
-                        <div class="color-bar-r" style="width: {{ (record.0.symbols_r * 100) / total_symbols }}%"></div>
-                        {% endif %}
-                        {% if record.0.symbols_g > 0 %}
-                        <div class="color-bar-g" style="width: {{ (record.0.symbols_g * 100) / total_symbols }}%"></div>
+                        {% if !record.0.active %}
+                            {% let total_symbols = record.0.symbols_w + record.0.symbols_u + record.0.symbols_b + record.0.symbols_r + record.0.symbols_g %}
+                            {% if record.0.symbols_w > 0 %}
+                            <div class="color-bar-w" style="width: {{ (record.0.symbols_w * 100) / total_symbols }}%"></div>
+                            {% endif %}
+                            {% if record.0.symbols_u > 0 %}
+                            <div class="color-bar-u" style="width: {{ (record.0.symbols_u * 100) / total_symbols }}%"></div>
+                            {% endif %}
+                            {% if record.0.symbols_b > 0 %}
+                            <div class="color-bar-b" style="width: {{ (record.0.symbols_b * 100) / total_symbols }}%"></div>
+                            {% endif %}
+                            {% if record.0.symbols_r > 0 %}
+                            <div class="color-bar-r" style="width: {{ (record.0.symbols_r * 100) / total_symbols }}%"></div>
+                            {% endif %}
+                            {% if record.0.symbols_g > 0 %}
+                            <div class="color-bar-g" style="width: {{ (record.0.symbols_g * 100) / total_symbols }}%"></div>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td>

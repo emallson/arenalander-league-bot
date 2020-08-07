@@ -12,3 +12,42 @@
     text-overflow: ellipsis;
     padding-right: 2em;
 }
+
+.color-bar {
+    width: 100%;
+    height: 100%;
+    letter-spacing: -4px;
+}
+
+/* colors are shamelessly stolen from the Penny Dreadful League page. */
+.color-bar > div {
+    display: inline-block;
+    border-right: 1px solid #999;
+    border-bottom: 1px solid #999;
+    border-top: 1px solid #999;
+    height: 0.7em;
+}
+
+.color-bar > div:first-child {
+    border-left: 1px solid #999;
+}
+
+.color-bar-w {
+    background-color: #fffcda;
+}
+
+.color-bar-u {
+    background-color: #ace2fa;
+}
+
+.color-bar-b {
+    background-color: #ccc2c0;
+}
+
+.color-bar-r {
+    background-color: #f8aa92;
+}
+
+.color-bar-g {
+    background-color: #9dd2af;
+}

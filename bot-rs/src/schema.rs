@@ -33,6 +33,11 @@ table! {
         creation_date -> Timestamptz,
         resigned -> Bool,
         active -> Bool,
+        symbols_w -> Int2,
+        symbols_u -> Int2,
+        symbols_b -> Int2,
+        symbols_r -> Int2,
+        symbols_g -> Int2,
     }
 }
 

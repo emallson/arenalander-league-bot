@@ -31,6 +31,11 @@ pub struct Deck {
     pub creation_date: DateTime<Utc>,
     pub resigned: bool,
     pub active: bool,
+    pub symbols_w: i16,
+    pub symbols_u: i16,
+    pub symbols_b: i16,
+    pub symbols_r: i16,
+    pub symbols_g: i16,
 }
 
 #[derive(Queryable, Insertable, Associations)]

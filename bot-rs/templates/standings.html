@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_title %}{{ league.title }} League Standings{% endblock %}
 {% block title %}{{ league.title }} League Standings{% endblock %}
-{% block subtitle %}<a href="/standings/{{ league.id }}">Permalink</a>{% endblock %}
+{% block subtitle %}{{ league.start_date.format("%e %B %Y") }} &ndash; {{ league.end_date.format("%e %B %Y") }} &middot; <a href="/standings/{{ league.id }}">Permalink</a>{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="/public/css/standings.css" />
@@ -15,15 +15,35 @@
             <thead>
                 <tr>
                     <td>Player</td>
+                    <td>Colors</td>
                     <td>Decklist</td>
                     <td class="align-center">Matches</td>
                     <td class="align-center">Games</td>
+                    <td>Date</td>
                 </tr>
             </thead>
             <tbody>
                 {% for record in contents %}
                 <tr>
                     <td>{{ record.1.name }}</td>
+                    <td class="color-bar">
+                        {% let total_symbols = record.0.symbols_w + record.0.symbols_u + record.0.symbols_b + record.0.symbols_r + record.0.symbols_g %}
+                        {% if record.0.symbols_w > 0 %}
+                        <div class="color-bar-w" style="width: {{ (record.0.symbols_w * 100) / total_symbols }}%"></div>
+                        {% endif %}
+                        {% if record.0.symbols_u > 0 %}
+                        <div class="color-bar-u" style="width: {{ (record.0.symbols_u * 100) / total_symbols }}%"></div>
+                        {% endif %}
+                        {% if record.0.symbols_b > 0 %}
+                        <div class="color-bar-b" style="width: {{ (record.0.symbols_b * 100) / total_symbols }}%"></div>
+                        {% endif %}
+                        {% if record.0.symbols_r > 0 %}
+                        <div class="color-bar-r" style="width: {{ (record.0.symbols_r * 100) / total_symbols }}%"></div>
+                        {% endif %}
+                        {% if record.0.symbols_g > 0 %}
+                        <div class="color-bar-g" style="width: {{ (record.0.symbols_g * 100) / total_symbols }}%"></div>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if !record.0.active %}
                         <a href="/deck/{{ record.0.id }}">Decklist</a>
@@ -39,6 +59,9 @@
                     </td>
                     <td class="align-center">
                         {{ record.2.game_wins }} &ndash; {{ record.2.game_losses }}
+                    </td>
+                    <td>
+                        {{ record.0.creation_date.format("%e %B %Y") }}
                     </td>
                 </tr>
                 {% endfor %}
@@ -65,4 +88,8 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block footer %}
+Inspired by the <a href="https://pennydreadfulmagic.com/league/current/">Penny Dreadful League</a>.
 {% endblock %}

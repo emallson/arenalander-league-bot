@@ -102,6 +102,7 @@ struct RawDeck {
 #[derive(Debug)]
 pub struct NormalizedCardEntry {
     pub uuid: Uuid,
+    pub manacost: Option<String>,
     pub count: u32,
 }
 
@@ -139,7 +140,7 @@ fn validate_count(name: &str, count: u32) -> Result<()> {
 const SETS_BY_NAME: [&str; 1] = ["JMP"];
 
 // TODO: bulk lookup
-fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
+fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<(Uuid, Option<String>)> {
     use super::schema::cards::dsl::*;
     use super::schema::card_names::dsl::{card_names, name as alt_name, scryfalloracleid as alt_id};
 
@@ -147,7 +148,7 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
         && !SETS_BY_NAME.iter().any(|c| *c == card.set.as_ref().unwrap()) {
         // prefer lookup by setcode + number
         cards
-            .select(scryfalloracleid)
+            .select((scryfalloracleid, manacost))
             .filter(
                 setcode
                     .eq(card.set.as_ref().unwrap())
@@ -166,7 +167,7 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<Uuid> {
     } else {
         cards
             .left_join(card_names.on(scryfalloracleid.eq(alt_id)))
-            .select(scryfalloracleid)
+            .select((scryfalloracleid, manacost))
             .filter(name.eq(&card.name).or(alt_name.eq(&card.name)))
             .first(conn)
             .optional()
@@ -232,7 +233,7 @@ fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
 
     let banned = cards
         .iter()
-        .filter_map(|(e, c)| {
+        .filter_map(|(e, (c, _))| {
             if banned.contains(c) {
                 Some(e.name.clone())
             } else {
@@ -246,8 +247,9 @@ fn validate_decklist(conn: &PgConnection, list: RawDeck) -> Result<Deck> {
 
     Ok(cards
         .into_iter()
-        .map(|(e, c)| NormalizedCardEntry {
+        .map(|(e, (c, m))| NormalizedCardEntry {
             uuid: c,
+            manacost: m,
             count: e.count,
         })
         .collect())

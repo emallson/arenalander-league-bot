@@ -165,10 +165,12 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<(Uuid, Option
     if res.is_some() {
         res
     } else {
+        let alt_query = card_names.select(alt_id).filter(alt_name.eq(&card.name)).limit(1);
+
         cards
-            .left_join(card_names.on(scryfalloracleid.eq(alt_id)))
             .select((scryfalloracleid, manacost))
-            .filter(name.eq(&card.name).or(alt_name.eq(&card.name)))
+            .filter(name.eq(&card.name).or(scryfalloracleid.eq_any(alt_query)))
+            .limit(1)
             .first(conn)
             .optional()
             .expect("Unable to connect to DB for card lookup.")

@@ -41,3 +41,5 @@ a.no-underline {
     display: inline-block;
     margin-top: 0.25em;
 }
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) { a:link { background-position-y: 93%, 93%, 93%; } }

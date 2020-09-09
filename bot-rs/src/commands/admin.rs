@@ -1,4 +1,5 @@
-use chrono::Utc;
+use chrono::{Utc, Duration};
+use chrono_tz::US::Pacific;
 use chrono_english::{parse_date_string, Dialect};
 use serenity::framework::standard::{
     macros::{command, group},
@@ -12,6 +13,7 @@ use crate::actions;
 use crate::DbConn;
 use super::matches::respond_parse_error;
 use crate::actions::matches;
+
 
 #[group]
 #[prefix("admin")]
@@ -31,12 +33,12 @@ fn new_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult
     let data = ctx.data.read();
     let conn = data.get::<DbConn>().unwrap();
     let title = args.single::<String>()?;
-    let from = parse_date_string(args.single::<String>()?.as_str(), Utc::now(), Dialect::Us)
-        .expect("Unable to parse 'from' argument");
-    let to = parse_date_string(args.single::<String>()?.as_str(), Utc::now(), Dialect::Us)
-        .expect("Unable to parse 'from' argument");
-    let _league = actions::league::create_league(&*conn.lock().unwrap(), title, from, to)
-        .expect("Unable to create new league");
+    let from = parse_date_string(args.single::<String>()?.as_str(), Utc::now().with_timezone(&Pacific), Dialect::Us)?;
+    let to = parse_date_string(args.single::<String>()?.as_str(), Utc::now().with_timezone(&Pacific), Dialect::Us)?;
+
+    let offset = Duration::hours(10);
+
+    let _league = actions::league::create_league(&*conn.lock().unwrap(), title, (from + offset).with_timezone(&Utc), (to + offset).with_timezone(&Utc))?;
 
     msg.channel_id
         .say(&ctx.http, "League successfully created!")?;

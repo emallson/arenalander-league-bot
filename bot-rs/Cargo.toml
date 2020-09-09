@@ -16,6 +16,7 @@ anyhow = "1.0.28"
 thiserror = "1.0.15"
 uuid = { version = "0.7", features = ["v4"] }
 chrono-english = "0.1.4"
+chrono-tz = "0.4"
 fern = "0.6.0"
 log = "0.4.8"
 askama = "0.9.0"

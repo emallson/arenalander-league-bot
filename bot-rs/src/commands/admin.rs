@@ -18,7 +18,7 @@ use crate::actions::matches;
 #[group]
 #[prefix("admin")]
 #[only_in(guilds)]
-#[required_permissions("ADMINISTRATOR")]
+#[allowed_roles("Mod", "League Bot Doctor")]
 #[commands(new_league, list_leagues, delete_league, finalize_league, confirm_match)]
 pub(crate) struct LeagueControl;
 

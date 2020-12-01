@@ -13,7 +13,7 @@ use serenity::client::Client;
 use serenity::framework::standard::{
     help_commands,
     macros::{check, help},
-    Args, CheckResult, CommandGroup, CommandOptions, CommandResult, HelpOptions, StandardFramework,
+    Args, CheckResult, CommandGroup, CommandOptions, CommandResult, HelpOptions, StandardFramework, CommonOptions
 };
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
@@ -291,7 +291,20 @@ fn help_cmd(
     groups: &[&'static CommandGroup],
     owners: HashSet<UserId>,
 ) -> CommandResult {
-    help_commands::with_embeds(ctx, msg, args, help_options, groups, owners)
+    // the serenity embeds command doesn't hide groups based on roles by default
+    // (it only hides commands). this is basically a modified copypaste from the
+    // internals that hides groups when you are missing a role.
+    let groups: Vec<&'static CommandGroup> = if let Some(lock) = msg.guild(&ctx.cache) {
+        let guild = lock.read();
+        let member = guild.member(&ctx, msg.author.id)?;
+        groups.into_iter().filter(|group| {
+            let allowed_roles = group.options.allowed_roles();
+            allowed_roles.is_empty() || allowed_roles.iter().flat_map(|role| guild.roles.values().find(|r| r.name == *role)).any(|role| member.roles.contains(&role.id))
+        }).map(|g| *g).collect()
+    } else {
+        groups.to_vec()
+    };
+    help_commands::with_embeds(ctx, msg, args, help_options, &groups, owners)
 }
 
 #[check]

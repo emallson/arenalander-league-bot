@@ -56,6 +56,16 @@ struct DisplayCard {
     uuid: Uuid,
 }
 
+impl DisplayCard {
+    pub fn face_name(&self) -> &str {
+        if self.name.contains("///") {
+            self.name.as_str()
+        } else {
+            self.name.split('/').nth(0).unwrap()
+        }
+    }
+}
+
 impl PartialOrd for DisplayCard {
     fn partial_cmp(&self, other: &DisplayCard) -> Option<Ordering> {
         Some(match self.cmc.partial_cmp(&other.cmc) {
@@ -183,6 +193,7 @@ fn get_deck(
                 scryfalloracleid,
             ))
             .distinct_on(dcid)
+            .order_by((dcid.desc(), name.desc()))
             .get_results(conn)?
     };
 

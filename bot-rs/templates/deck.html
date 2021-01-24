@@ -50,7 +50,7 @@
                 <header>{{ displaytype }} ({{ section.count() }})</header>
                 <ul>
                     {% for card in section.0 %}
-                    <li><div class="card-count">{{ card.count }}</div><span class="mtgcard">{{ card.name }}</span>
+                    <li><div class="card-count">{{ card.count }}</div><span data-cardname="{{ card.name }}" class="mtgcard">{{ card.face_name() }}</span>
                         {% if card.cost.is_some() %}
                         <div class="manacost">
                             {% for cost in card.cost.as_ref().unwrap() %}

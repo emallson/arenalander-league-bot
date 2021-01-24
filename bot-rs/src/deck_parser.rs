@@ -35,7 +35,18 @@ pub struct RawDeckEntry {
     pub code: Option<String>,
 }
 
-const BASICS: [&str; 5] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+const BASICS: [&str; 10] = [
+    "Plains",
+    "Island",
+    "Swamp",
+    "Mountain",
+    "Forest",
+    "Snow-Covered Plains",
+    "Snow-Covered Island",
+    "Snow-Covered Swamp",
+    "Snow-Covered Mountain",
+    "Snow-Covered Forest",
+];
 const BANNED_CARDS: [&str; 5] = [
     "60c60923-ff1b-43f7-8768-731499fcffc9", // Oko
     "aa959340-c869-4caa-92c7-572bd8d23eef", // Field of the Dead
@@ -144,11 +155,17 @@ const SETS_BY_NAME: [&str; 3] = ["JMP", "ANA", "ANB"];
 
 // TODO: bulk lookup
 fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<(Uuid, Option<String>)> {
+    use super::schema::card_names::dsl::{
+        card_names, name as alt_name, scryfalloracleid as alt_id,
+    };
     use super::schema::cards::dsl::*;
-    use super::schema::card_names::dsl::{card_names, name as alt_name, scryfalloracleid as alt_id};
 
-    let res = if card.code.is_some() && card.set.is_some()
-        && !SETS_BY_NAME.iter().any(|c| *c == card.set.as_ref().unwrap()) {
+    let res = if card.code.is_some()
+        && card.set.is_some()
+        && !SETS_BY_NAME
+            .iter()
+            .any(|c| *c == card.set.as_ref().unwrap())
+    {
         // prefer lookup by setcode + number
         cards
             .select((scryfalloracleid, manacost))
@@ -168,7 +185,10 @@ fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<(Uuid, Option
     if res.is_some() {
         res
     } else {
-        let alt_query = card_names.select(alt_id).filter(alt_name.eq(&card.name)).limit(1);
+        let alt_query = card_names
+            .select(alt_id)
+            .filter(alt_name.eq(&card.name))
+            .limit(1);
 
         cards
             .select((scryfalloracleid, manacost))
@@ -374,7 +394,10 @@ mod test {
         let (_, deck) = parse_decklist("Deck\n1 Oriflama trasga (JMP) 130\n99 Mountain\n").unwrap();
         let deck = validate_decklist(&conn, deck).unwrap();
 
-        assert_eq!(deck[0].uuid, Uuid::parse_str("836bd011-2da5-443a-a814-19a664b98a1a").unwrap());
+        assert_eq!(
+            deck[0].uuid,
+            Uuid::parse_str("836bd011-2da5-443a-a814-19a664b98a1a").unwrap()
+        );
 
         let (_, deck) = parse_decklist(JMP_BS).unwrap();
         validate_decklist(&conn, deck).unwrap();

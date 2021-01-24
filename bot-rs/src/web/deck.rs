@@ -54,15 +54,19 @@ struct DisplayCard {
     cost: Option<Vec<String>>, // lands have no mana cost
     types: String,
     uuid: Uuid,
+    layout: String,
 }
 
 impl DisplayCard {
-    pub fn face_name(&self) -> &str {
-        if self.name.contains("///") {
-            self.name.as_str()
-        } else {
-            self.name.split('/').nth(0).unwrap()
+    pub fn arena_name(&self) -> &str {
+        match self.layout.as_str() {
+            "split" | "aftermath" => self.name.as_str(),
+            _ => self.face_name(),
         }
+    }
+
+    pub fn face_name(&self) -> &str {
+        self.name.split('/').nth(0).unwrap()
     }
 }
 
@@ -174,7 +178,7 @@ fn get_deck(
     }
 
     // at this point, we know we have access to the deck
-    let contents: Vec<(i32, i32, String, f64, Option<String>, String, Uuid)> = {
+    let contents: Vec<(i32, i32, String, f64, Option<String>, String, Uuid, String)> = {
         use crate::schema::cards::dsl::*;
         use crate::schema::deck_contents::dsl::id as dcid;
         use crate::schema::deck_contents::dsl::*;
@@ -191,8 +195,11 @@ fn get_deck(
                 manacost,
                 types,
                 scryfalloracleid,
+                layout,
             ))
             .distinct_on(dcid)
+            // sorting by name here puts the longest names first, so we get the full name of split
+            // cards
             .order_by((dcid.desc(), name.desc()))
             .get_results(conn)?
     };
@@ -201,7 +208,7 @@ fn get_deck(
         .into_iter()
         .fold(
             BTreeMap::new(),
-            |mut map, (_, count, name, cmc, cost, types, oracleid)| {
+            |mut map, (_, count, name, cmc, cost, types, oracleid, layout)| {
                 let entry = map.entry(oracleid).or_insert_with(|| DisplayCard {
                     count: 0,
                     name,
@@ -209,6 +216,7 @@ fn get_deck(
                     cost: cost.map(|c| parse_mana(&c).unwrap()),
                     types,
                     uuid: oracleid,
+                    layout,
                 });
 
                 entry.count += count as usize;

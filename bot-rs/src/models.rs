@@ -65,6 +65,7 @@ pub struct Card {
     pub types: String,
     pub convertedmanacost: f64,
     pub uuid: Uuid,
+    pub layout: String,
 }
 
 #[derive(Queryable, Clone, PartialEq)]

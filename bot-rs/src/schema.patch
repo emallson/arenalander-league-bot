@@ -40,7 +40,7 @@ index 855b7f8..f6f591b 100644
 +        convertedmanacost -> Float8,
 +        side -> Nullable<Text>,
 +        uuid -> Uuid,
-+        layout -> Text,
++        layout -> Nullable<Text>,
 +    }
 +}
 +

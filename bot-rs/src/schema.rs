@@ -115,7 +115,7 @@ table! {
         convertedmanacost -> Float8,
         side -> Nullable<Text>,
         uuid -> Uuid,
-        layout -> Text,
+        layout -> Nullable<Text>,
     }
 }
 

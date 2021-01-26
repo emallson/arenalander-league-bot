@@ -54,13 +54,13 @@ struct DisplayCard {
     cost: Option<Vec<String>>, // lands have no mana cost
     types: String,
     uuid: Uuid,
-    layout: String,
+    layout: Option<String>,
 }
 
 impl DisplayCard {
     pub fn arena_name(&self) -> &str {
-        match self.layout.as_str() {
-            "split" | "aftermath" => self.name.as_str(),
+        match self.layout.as_ref().map(|s| s.as_str()) {
+            Some("split") | Some("aftermath") => self.name.as_str(),
             _ => self.face_name(),
         }
     }
@@ -178,7 +178,16 @@ fn get_deck(
     }
 
     // at this point, we know we have access to the deck
-    let contents: Vec<(i32, i32, String, f64, Option<String>, String, Uuid, String)> = {
+    let contents: Vec<(
+        i32,
+        i32,
+        String,
+        f64,
+        Option<String>,
+        String,
+        Uuid,
+        Option<String>,
+    )> = {
         use crate::schema::cards::dsl::*;
         use crate::schema::deck_contents::dsl::id as dcid;
         use crate::schema::deck_contents::dsl::*;

@@ -6,13 +6,13 @@ use crate::schema::deck_contents::dsl::*;
 use crate::schema::decks::dsl::*;
 use crate::schema::users::dsl::*;
 use anyhow::Result;
-use std::collections::HashMap;
 use chrono::Utc;
-use regex::Regex;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use diesel::{insert_into, update};
+use regex::Regex;
 use serenity::model::user::User as SerenityUser;
+use std::collections::HashMap;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -20,7 +20,7 @@ use uuid::Uuid;
 pub enum RegistrationError {
     #[error("You already have an active league deck: https://example.com/decks/{0}")]
     AlreadyActiveDeck(i32),
-    #[error("There is not currently an active league")]
+    #[error("No league is running at this time.")]
     NoLeague,
 }
 
@@ -32,7 +32,9 @@ fn count_symbols(decklist: &ParsedDeck) -> HashMap<char, i16> {
     for card_ in decklist {
         if let Some(ref cost) = card_.manacost {
             for cap in symbol_re.captures_iter(&cost) {
-                *counts.entry(cap["symbol"].chars().nth(0).unwrap()).or_insert(0) += 1;
+                *counts
+                    .entry(cap["symbol"].chars().nth(0).unwrap())
+                    .or_insert(0) += 1;
             }
         }
     }
@@ -114,7 +116,12 @@ pub fn resign(conn: &PgConnection, user: &SerenityUser) -> Result<()> {
     let current_league = current_league.unwrap();
 
     update(decks)
-        .filter(owner.eq(user.id).and(league.eq(current_league.id)).and(active.eq(true)))
+        .filter(
+            owner
+                .eq(user.id)
+                .and(league.eq(current_league.id))
+                .and(active.eq(true)),
+        )
         .set((active.eq(false), resigned.eq(true)))
         .execute(conn)?;
 
@@ -125,21 +132,21 @@ pub fn resign(conn: &PgConnection, user: &SerenityUser) -> Result<()> {
 mod test {
     #[test]
     fn test_symbol_count() {
-        use uuid::Uuid;
-        use crate::deck_parser::NormalizedCardEntry;
         use super::count_symbols;
+        use crate::deck_parser::NormalizedCardEntry;
+        use uuid::Uuid;
 
         let deck = vec![
             NormalizedCardEntry {
                 count: 1,
                 manacost: Some("{W}{U}{W}{U}".to_owned()),
-                uuid: Uuid::new_v4()
+                uuid: Uuid::new_v4(),
             },
             NormalizedCardEntry {
                 count: 1,
                 manacost: Some("{G}{G}{G}{W}{3}{R/B}".to_owned()),
                 uuid: Uuid::new_v4(),
-            }
+            },
         ];
 
         let counts = count_symbols(&deck);
@@ -148,6 +155,5 @@ mod test {
         assert_eq!(counts.get(&'B'), None);
         assert_eq!(counts.get(&'R'), None);
         assert_eq!(counts[&'G'], 3);
-
     }
 }

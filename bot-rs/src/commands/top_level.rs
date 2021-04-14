@@ -7,8 +7,8 @@ use serenity::framework::standard::{
     CommandResult,
 };
 use serenity::model::channel::Message;
-use serenity::utils::MessageBuilder;
 use serenity::prelude::*;
+use serenity::utils::MessageBuilder;
 use std::collections::HashMap;
 
 use super::util::fmt_command;
@@ -28,7 +28,7 @@ fn register(ctx: &mut Context, msg: &Message) -> CommandResult {
         if lg.is_none() {
             debug!("!register without an active league");
             msg.channel_id
-                .say(&ctx.http, "There is currently active league.")?;
+                .say(&ctx.http, "No league is running at this time.")?;
             return Ok(());
         }
 

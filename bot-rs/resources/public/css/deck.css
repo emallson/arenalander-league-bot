@@ -40,8 +40,9 @@ footer {
 
 .deck-sections section {
     margin-right: 25px;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    /* 1px bottom settings to fix a render bug in chrome-based browsers */
+    margin-bottom: 1px;
+    padding-bottom: 1px;
     break-inside: avoid;
 }
 

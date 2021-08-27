@@ -47,11 +47,12 @@ const BASICS: [&str; 10] = [
     "Snow-Covered Mountain",
     "Snow-Covered Forest",
 ];
-const BANNED_CARDS: [&str; 4] = [
+const BANNED_CARDS: [&str; 5] = [
     "60c60923-ff1b-43f7-8768-731499fcffc9", // Oko
     "aa959340-c869-4caa-92c7-572bd8d23eef", // Field of the Dead
     "ae7604bb-4818-45a3-960c-cf3d83f15964", // Teferi, Time Raveler
     "6c1d22d4-f28e-4041-a9b6-1575e8929b61", // Nexus of Fate
+    "8c1fe337-375a-4add-93b6-0ac39ed72b4f", // Natural Order
 ];
 
 fn card(input: &str) -> IResult<&str, RawDeckEntry> {

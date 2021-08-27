@@ -151,7 +151,7 @@ fn validate_count(name: &str, count: u32) -> Result<()> {
 /// A list of sets where we key off of name instead of setcode + number. Used
 /// when Arena exports wonky values, such as AJMP cards being exported as JMP
 /// with duplicate (setcode, number) tuples.
-const SETS_BY_NAME: [&str; 3] = ["JMP", "ANA", "ANB"];
+const SETS_BY_NAME: [&str; 4] = ["JMP", "ANA", "ANB", "J21"];
 
 // TODO: bulk lookup
 fn lookup_card(conn: &PgConnection, card: &RawDeckEntry) -> Option<(Uuid, Option<String>)> {

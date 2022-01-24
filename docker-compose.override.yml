@@ -2,11 +2,11 @@ version: '2.0'
 services:
   botrs:
     ports:
-      - "3000:3000"
+      - "3001:3000"
   db:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: arstarst
       POSTGRES_DB: db
     ports:
-      - "5432:5432"
+      - "5433:5432"

@@ -23,14 +23,6 @@ fn register(ctx: &mut Context, msg: &Message) -> CommandResult {
     {
         let data = ctx.data.read();
         let conn = data.get::<DbConn>().unwrap().lock().unwrap();
-        let lg = actions::league::current_league(&*conn)?;
-
-        if lg.is_none() {
-            debug!("!register without an active league");
-            msg.channel_id
-                .say(&ctx.http, "No league is running at this time.")?;
-            return Ok(());
-        }
 
         let is_active = actions::league::check_active(&*conn, &msg.author)?;
         if is_active {
@@ -72,10 +64,7 @@ fn league(ctx: &mut Context, msg: &Message) -> CommandResult {
     let conn = data.get::<DbConn>().unwrap();
     let league = actions::league::current_league(&*conn.lock().unwrap())?;
 
-    let message = match league {
-        Some(league) => format!("The {} League is currently active. It began on {} and runs until {}. To register a deck for the league, use `{}`. League standings can be viewed at {}/standings", league.title, league.start_date.format("%e %B %Y"), (league.end_date - Duration::seconds(1)).format("%r %Z on %e %B %Y"), fmt_command("register"), BASE_URL),
-        None => "There is not currently a league active.".to_string()
-    };
+    let message = format!("The {} League is currently active. It began on {} and runs until {}. To register a deck for the league, use `{}`. League standings can be viewed at {}/standings", league.title, league.start_date.format("%e %B %Y"), (league.end_date - Duration::seconds(1)).format("%r %Z on %e %B %Y"), fmt_command("register"), BASE_URL);
 
     if let Err(why) = msg.channel_id.say(&ctx.http, &message) {
         error!("error in !league: {:?}", why);

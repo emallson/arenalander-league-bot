@@ -17,10 +17,7 @@ pub fn lookup_user(conn: &PgConnection, user: &SerenityUser) -> Result<User> {
 /// Looks up the deck belonging to the given user from the current league.
 pub fn lookup_deck(conn: &PgConnection, user: &SerenityUser) -> Result<Option<Deck>> {
     use crate::schema::decks::dsl::*;
-    let lg = match current_league(conn)? {
-        Some(l) => l,
-        None => return Ok(None),
-    };
+    let lg = current_league(conn)?;
 
     let user = match lookup_user(conn, user) {
         Ok(user) => user,

@@ -1,4 +1,4 @@
-FROM rust
+FROM rust:latest
 RUN apt update && apt install libpq5
 RUN cargo install diesel_cli --no-default-features --features postgres
 WORKDIR /opt/bot

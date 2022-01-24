@@ -1,6 +1,5 @@
-use chrono::{Utc, Duration};
+use chrono::{Utc, Duration, DateTime, TimeZone};
 use chrono_tz::US::Pacific;
-use chrono_english::{parse_date_string, Dialect};
 use serenity::framework::standard::{
     macros::{command, group},
     Args, CommandResult, ArgError,
@@ -22,6 +21,11 @@ use crate::actions::matches;
 #[commands(new_league, list_leagues, delete_league, finalize_league, confirm_match)]
 pub(crate) struct LeagueControl;
 
+pub(crate) fn parse_league_date(input: &str) -> Result<DateTime<chrono_tz::Tz>, Box<dyn std::error::Error>> {
+    let naive_date = chrono::naive::NaiveDate::parse_from_str(input, "%d %B %Y")?.and_hms(0, 0, 0);
+    Ok(Pacific.from_local_datetime(&naive_date).latest().ok_or("unable to parse input")?)
+}
+
 #[command]
 #[only_in(guilds)]
 #[num_args(3)]
@@ -33,8 +37,8 @@ fn new_league(ctx: &mut Context, msg: &Message, mut args: Args) -> CommandResult
     let data = ctx.data.read();
     let conn = data.get::<DbConn>().unwrap();
     let title = args.single::<String>()?;
-    let from = parse_date_string(args.single::<String>()?.as_str(), Utc::now().with_timezone(&Pacific), Dialect::Us)?;
-    let to = parse_date_string(args.single::<String>()?.as_str(), Utc::now().with_timezone(&Pacific), Dialect::Us)?;
+    let from = parse_league_date(args.single::<String>()?.as_str())?;
+    let to = parse_league_date(args.single::<String>()?.as_str())?;
 
     let offset = Duration::hours(10);
 
@@ -141,4 +145,18 @@ fn confirm_match(ctx: &mut Context, msg: &Message) -> CommandResult {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use chrono::{TimeZone, Utc};
+    #[test]
+    fn test_date_parsing() {
+        let res = parse_league_date("1 November 2021").unwrap();
+
+        assert_eq!(res, Utc.ymd(2021, 11, 1).and_hms(7, 0, 0).with_timezone(&chrono_tz::US::Pacific));
+
+        assert!(parse_league_date("32 November 2021").is_err());
+    }
 }

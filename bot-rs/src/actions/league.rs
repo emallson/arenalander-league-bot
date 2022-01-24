@@ -1,7 +1,9 @@
+use num_traits::cast::FromPrimitive;
 use super::lookup::lookup_deck;
 use crate::models::League;
 use crate::schema::leagues::dsl::*;
 use anyhow::Result;
+use chrono::prelude::*;
 use chrono::{DateTime, Utc};
 use diesel::prelude::*;
 use diesel::PgConnection;
@@ -20,6 +22,28 @@ pub fn create_league(
         .map_err(|e| e.into())
 }
 
+/// Create a new monthly league. Assumes it does not already exist.
+///
+/// # Panics
+///
+/// If it is not possible to create a DateTime at 10th hour of the 1st of the month, or if the
+/// start date has an invalid month associated with it.
+pub fn create_monthly_league(conn: &PgConnection) -> Result<League> {
+    let today = Utc::now();
+    let start = today.with_day(1).unwrap().with_hour(10).unwrap();
+    let mut d = today.naive_utc().date();
+    let end = loop {
+        let next = d.succ();
+        if next.month() != d.month() {
+            break d;
+        }
+        d = next;
+    };
+    let end = DateTime::from_utc(end.and_hms(10, 0, 0), Utc);
+
+    create_league(conn, format!("{} {}", Month::from_u32(start.month()).unwrap().name(), start.year()), start, end)
+}
+
 pub fn delete_league(conn: &PgConnection, lid: i32) -> Result<usize> {
     delete(leagues)
         .filter(id.eq(lid))
@@ -31,13 +55,18 @@ pub fn list_leagues(conn: &PgConnection) -> Result<Vec<League>> {
     leagues.get_results(conn).map_err(|e| e.into())
 }
 
-pub fn current_league(conn: &PgConnection) -> Result<Option<League>> {
+pub fn current_league(conn: &PgConnection) -> Result<League> {
     let now = Utc::now();
-    leagues
+    let league = leagues
         .filter(start_date.lt(now).and(end_date.gt(now)))
         .first(conn)
-        .optional()
-        .map_err(|e| e.into())
+        .optional()?;
+
+    if let Some(league) = league {
+        Ok(league)
+    } else {
+        create_monthly_league(conn)
+    }
 }
 
 /// Checks if the given user has an active deck in the given league.

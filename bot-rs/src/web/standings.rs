@@ -16,7 +16,7 @@ fn get_league(conn: &PgConnection, league_id: Option<i32>) -> Result<Option<Leag
             .optional()
             .map_err(|e| e.into())
     } else {
-        current_league(conn).map_err(|e| e.into())
+        current_league(conn).map(|l| Some(l)).map_err(|e| e.into())
     }
 }
 
@@ -27,13 +27,7 @@ fn get_user_standings(conn: &PgConnection, league_id: Option<i32>) -> Result<Vec
     let lid = if let Some(lid) = league_id {
         lid
     } else {
-        let league_ = current_league(conn)?;
-
-        if league_.is_none() {
-            return Ok(vec![]);
-        }
-
-        league_.unwrap().id
+        current_league(conn)?.id
     };
 
     let results: Vec<(String, i64, i64)> = leaderboard
@@ -104,14 +98,9 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
     let conn = pool.get().expect("Unable to get DB connection");
     let league = web::block(move || current_league(&conn)).await?;
 
-    if let Some(league) = league {
-        Ok(HttpResponse::Ok()
-           .content_type("text/html")
-           .body(Standings { league, contents, leaders }.render().unwrap()))
-    } else {
-        Ok(HttpResponse::NotFound().finish())
-    }
-
+    Ok(HttpResponse::Ok()
+       .content_type("text/html")
+       .body(Standings { league, contents, leaders }.render().unwrap()))
 }
 
 #[get("/{id}")]

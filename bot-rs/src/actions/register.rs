@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 #[derive(Error, Debug)]
 pub enum RegistrationError {
     #[error("You already have an active league deck: https://example.com/decks/{0}")]
@@ -54,12 +55,6 @@ pub fn register_deck(
         .get_result(conn)?;
 
     let current_league = get_league(conn)?;
-    if current_league.is_none() {
-        return Err(RegistrationError::NoLeague.into());
-    }
-
-    let current_league = current_league.unwrap();
-
     let active_deck: Option<Deck> = decks
         .filter(
             league
@@ -109,11 +104,6 @@ pub fn resign(conn: &PgConnection, user: &SerenityUser) -> Result<()> {
         .filter(discordid.eq(*user.id.as_u64() as i64))
         .get_result(conn)?;
     let current_league = get_league(conn)?;
-    if current_league.is_none() {
-        return Err(RegistrationError::NoLeague.into());
-    }
-
-    let current_league = current_league.unwrap();
 
     update(decks)
         .filter(

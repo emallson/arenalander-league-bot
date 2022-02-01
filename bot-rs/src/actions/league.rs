@@ -30,16 +30,16 @@ pub fn create_league(
 /// start date has an invalid month associated with it.
 pub fn create_monthly_league(conn: &PgConnection) -> Result<League> {
     let today = Utc::now();
-    let start = today.with_day(1).unwrap().with_hour(10).unwrap();
+    let start = today.with_day(1).unwrap().with_hour(18).unwrap().with_minute(0).unwrap().with_second(0).unwrap();
     let mut d = today.naive_utc().date();
     let end = loop {
         let next = d.succ();
         if next.month() != d.month() {
-            break d;
+            break next;
         }
         d = next;
     };
-    let end = DateTime::from_utc(end.and_hms(10, 0, 0), Utc);
+    let end = DateTime::from_utc(end.and_hms(18, 0, 0), Utc);
 
     create_league(conn, format!("{} {}", Month::from_u32(start.month()).unwrap().name(), start.year()), start, end)
 }

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_title %}{{ league.title }} League Standings{% endblock %}
 {% block title %}{{ league.title }} League Standings{% endblock %}
-{% block subtitle %}{{ league.start_date.format("%e %B %Y") }} &ndash; {{ league.end_date.format("%e %B %Y") }} &middot; <a href="/standings/{{ league.id }}">Permalink</a>{% endblock %}
+{% block subtitle %}{{ league.start_date.format("%e %B %Y") }} &ndash; {{ league.end_date.format("%e %B %Y") }} &middot; <a href="/standings/{{ league.id }}">Permalink</a> &middot; <a href="/standings/list">All Leagues</a>{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="/public/css/standings.css" />

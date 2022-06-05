@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block head_title %}All Leagues{% endblock %}
+{% block title %}All Leagues{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/public/css/standings_list.css" />
+{% endblock %}
+
+{% block contents %}
+<div id="standings-list-container">
+    <ol id="leagues">
+        {% for league in leagues %}
+        <li><a href="/standings/{{ league.id }}">{{ league.title }}</a></li>
+        {% endfor %}
+    </ol>
+</div>
+{% endblock %}

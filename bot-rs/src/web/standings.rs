@@ -1,5 +1,5 @@
 use super::DbPool;
-use crate::actions::league::current_league;
+use crate::actions::league::{current_league, list_leagues};
 use crate::models::{Deck, DeckRecord, League, User};
 use actix_web::{get, web, HttpResponse, Responder, Result as WebResult, Scope};
 use anyhow::Result;
@@ -103,6 +103,24 @@ async fn standings(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
        .body(Standings { league, contents, leaders }.render().unwrap()))
 }
 
+#[derive(Template)]
+#[template(path = "standings_list.html")]
+struct StandingsList {
+    leagues: Vec<League>,
+}
+
+#[get("/list")]
+async fn standings_list(pool: web::Data<DbPool>) -> WebResult<impl Responder> {
+    let conn = pool.get().expect("Unable to get DB connection");
+
+    let mut leagues = web::block(move || list_leagues(&conn)).await?;
+    leagues.reverse();
+
+    Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(StandingsList { leagues }.render().unwrap()))
+}
+
 #[get("/{id}")]
 async fn standings_for(
     pool: web::Data<DbPool>,
@@ -136,5 +154,6 @@ async fn standings_for(
 pub fn service() -> Scope {
     web::scope("/standings")
         .service(standings)
+        .service(standings_list)
         .service(standings_for)
 }

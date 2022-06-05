@@ -9,6 +9,7 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use diesel::{delete, insert_into, update};
 use serenity::model::user::User as SerenityUser;
+use diesel::pg::expression::dsl::any;
 
 pub fn create_league(
     conn: &PgConnection,
@@ -41,6 +42,7 @@ pub fn create_monthly_league(conn: &PgConnection) -> Result<League> {
     };
     let end = DateTime::from_utc(end.and_hms(18, 0, 0), Utc);
 
+    finalize_ended_leagues(conn)?;
     create_league(conn, format!("{} {}", Month::from_u32(start.month()).unwrap().name(), start.year()), start, end)
 }
 
@@ -80,6 +82,21 @@ pub fn finalize_league(conn: &PgConnection, league_id: i32) -> Result<usize> {
 
     update(decks)
         .filter(league.eq(league_id))
+        .set(active.eq(false))
+        .execute(conn)
+        .map_err(|e| e.into())
+}
+
+pub fn finalize_ended_leagues(conn: &PgConnection) -> Result<usize> {
+    use crate::schema::decks::dsl::{active, decks, league};
+
+    let now = Utc::now();
+
+    // diesel doesn't support updates with joins >.<
+    let dead_leagues = leagues.filter(end_date.lt(now)).select(id.nullable());
+
+    update(decks)
+        .filter(league.eq(any(dead_leagues)))
         .set(active.eq(false))
         .execute(conn)
         .map_err(|e| e.into())

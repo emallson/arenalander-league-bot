@@ -111,7 +111,7 @@ dependencies = [
  "percent-encoding",
  "pin-project 0.4.28",
  "rand 0.7.3",
- "regex 1.5.4",
+ "regex 1.5.5",
  "serde",
  "serde_json",
  "serde_urlencoded 0.6.1",
@@ -139,7 +139,7 @@ dependencies = [
  "bytestring",
  "http",
  "log",
- "regex 1.5.4",
+ "regex 1.5.5",
  "serde",
 ]
 
@@ -299,7 +299,7 @@ dependencies = [
  "mime",
  "net2",
  "pin-project 0.4.28",
- "regex 1.5.4",
+ "regex 1.5.5",
  "serde",
  "serde_json",
  "serde_urlencoded 0.6.1",
@@ -529,7 +529,7 @@ dependencies = [
  "nom 5.1.2",
  "num-traits",
  "qstring",
- "regex 1.5.4",
+ "regex 1.5.5",
  "sentry",
  "serde_json",
  "serenity",
@@ -744,7 +744,7 @@ dependencies = [
  "diesel_derives",
  "pq-sys",
  "r2d2",
- "uuid 0.7.4",
+ "uuid 0.8.2",
 ]
 
 [[package]]
@@ -2019,9 +2019,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.5.4"
+version = "1.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d07a8629359eb56f1e2fb1652bb04212c072a87ba68546a04065d525673ac461"
+checksum = "1a11647b6b25ff05a515cb92c365cec08801e83423a235b51e231e1808747286"
 dependencies = [
  "aho-corasick 0.7.18",
  "memchr",
@@ -2285,7 +2285,7 @@ dependencies = [
  "libc",
  "log",
  "rand 0.7.3",
- "regex 1.5.4",
+ "regex 1.5.5",
  "reqwest",
  "rustc_version 0.2.3",
  "sentry-types",

@@ -25,7 +25,7 @@ actix-rt = "1.1.0"
 actix-files = "0.2.1"
 qstring = "0.7.2"
 sentry = { version = "0.18.0", features = ["with_log"]}
-juniper = "0.14.2"
+juniper = "0.15.10"
 serde_json = "1.0.56"
 regex = "1"
 num-traits = "0.2.14"
